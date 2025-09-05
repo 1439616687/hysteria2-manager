@@ -1,6 +1,6 @@
 [Unit]
 Description=Hysteria2 Manager WebUI Service
-Documentation=https://github.com/yourusername/hysteria2-manager
+Documentation=https://github.com/1439616687/hysteria2-manager
 After=network-online.target
 Wants=network-online.target systemd-networkd-wait-online.service
 
