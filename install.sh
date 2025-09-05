@@ -354,7 +354,7 @@ download_project_files() {
     print_title "下载项目文件"
     
     # GitHub仓库地址
-    GITHUB_REPO="https://raw.githubusercontent.com/yourusername/hysteria2-manager/main"
+    GITHUB_REPO="https://raw.githubusercontent.com/1439616687/hysteria2-manager/main"
     
     # 下载主程序
     print_step "下载主程序..."
@@ -394,7 +394,7 @@ create_minimal_manager() {
 import os
 import sys
 print("请从GitHub下载完整版本的hysteria2_manager.py")
-print("https://github.com/yourusername/hysteria2-manager")
+print("https://github.com/1439616687/hysteria2-manager")
 sys.exit(1)
 EOF
     chmod +x "$INSTALL_DIR/hysteria2_manager.py"
@@ -408,7 +408,7 @@ create_minimal_webui() {
 <head><title>Hysteria2 Manager</title></head>
 <body>
 <h1>请从GitHub下载完整版本</h1>
-<p>https://github.com/yourusername/hysteria2-manager</p>
+<p>https://github.com/1439616687/hysteria2-manager</p>
 </body>
 </html>
 EOF
@@ -483,7 +483,7 @@ create_systemd_services() {
     cat > "$SYSTEMD_DIR/hysteria2-manager.service" << EOF
 [Unit]
 Description=Hysteria2 Manager WebUI Service
-Documentation=https://github.com/yourusername/hysteria2-manager
+Documentation=https://github.com/1439616687/hysteria2-manager
 After=network-online.target
 Wants=network-online.target
 
