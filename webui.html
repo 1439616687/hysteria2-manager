@@ -11,8 +11,25 @@
     <!-- Axios -->
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
     
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chart.js - 使用稳定版本 3.9.1 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    
+    <!-- 验证 Chart.js 加载 -->
+    <script>
+        window.addEventListener('DOMContentLoaded', function() {
+            if (typeof Chart === 'undefined') {
+                console.error('Chart.js 加载失败！尝试备用CDN...');
+                var script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js';
+                script.onload = function() {
+                    console.log('Chart.js 从备用CDN加载成功');
+                };
+                document.head.appendChild(script);
+            } else {
+                console.log('Chart.js 加载成功，版本:', Chart.version);
+            }
+        });
+    </script>
     
     <style>
         /* ==================== 变量定义 ==================== */
@@ -90,6 +107,18 @@
             color: var(--text-primary);
             line-height: 1.6;
             transition: var(--transition);
+        }
+        
+        /* ==================== Canvas 样式修复 ==================== */
+        #resourceChart {
+            max-width: 100%;
+            max-height: 100%;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 250px;
+            padding: 10px;
         }
         
         /* ==================== SVG图标定义 ==================== */
@@ -1444,7 +1473,7 @@
                                         <span>内存: <strong style="color: #4CAF50;">{{ systemStats?.memory?.total?.toFixed(1) || '0' }}%</strong></span>
                                     </div>
                                 </div>
-                                <div style="height: 250px; position: relative;">
+                                <div class="chart-container">
                                     <canvas id="resourceChart"></canvas>
                                 </div>
                             </div>
@@ -2152,18 +2181,22 @@
                         this.fetchLogs();
                     }
                     
-                    // 切换到仪表板时初始化或刷新图表
+                    // 切换到仪表板时初始化图表
                     if (page === 'dashboard') {
+                        console.log('[Nav] 切换到仪表板');
+                        
                         // 先获取最新数据
                         this.fetchSystemStats();
                         
-                        // 延迟初始化图表，确保DOM已渲染
+                        // 确保DOM更新后再初始化图表
                         this.$nextTick(() => {
+                            // 延迟执行以确保DOM完全渲染
                             setTimeout(() => {
                                 if (!this.resourceChart) {
+                                    console.log('[Nav] 需要初始化图表');
                                     this.initResourceChart();
                                 } else {
-                                    // 如果图表已存在，更新数据
+                                    console.log('[Nav] 图表已存在，更新数据');
                                     this.updateResourceChart();
                                 }
                             }, 100);
@@ -2242,8 +2275,10 @@
                         const response = await axios.get(`${API_BASE}/system/stats`);
                         if (response.data.success) {
                             this.systemStats = response.data.data;
+                            console.log('[Stats] 系统统计数据:', this.systemStats);
+                            
                             // 只有在仪表板页面才更新图表
-                            if (this.currentPage === 'dashboard' && this.resourceChart) {
+                            if (this.currentPage === 'dashboard') {
                                 this.updateResourceChart();
                             }
                         }
@@ -2627,87 +2662,108 @@
                     return icons[type] || icons.info;
                 },
                 
-                // ==================== 图表相关 - 修复版本 ====================
+                // ==================== 图表相关 - 完全修复版本 ====================
                 initResourceChart() {
-                    // 确保在下一个事件循环中执行，确保DOM已经渲染
-                    this.$nextTick(() => {
-                        const ctx = document.getElementById('resourceChart');
-                        if (!ctx) {
-                            // 如果元素还不存在，延迟重试
-                            setTimeout(() => this.initResourceChart(), 100);
+                    console.log('[Chart] 开始初始化图表...');
+                    
+                    // 延迟执行以确保DOM已经渲染
+                    setTimeout(() => {
+                        // 检查 Chart.js 是否加载
+                        if (typeof Chart === 'undefined') {
+                            console.error('[Chart] Chart.js 未加载！');
+                            // 尝试动态加载
+                            if (!window.chartLoadAttempted) {
+                                window.chartLoadAttempted = true;
+                                const script = document.createElement('script');
+                                script.src = 'https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js';
+                                script.onload = () => {
+                                    console.log('[Chart] Chart.js 动态加载成功');
+                                    this.initResourceChart();
+                                };
+                                document.head.appendChild(script);
+                            }
                             return;
                         }
                         
-                        // 如果图表已存在，先销毁
-                        if (this.resourceChart) {
-                            this.resourceChart.destroy();
-                            this.resourceChart = null;
+                        // 获取canvas元素
+                        const canvas = document.getElementById('resourceChart');
+                        if (!canvas) {
+                            console.error('[Chart] Canvas元素未找到！');
+                            // 重试
+                            setTimeout(() => this.initResourceChart(), 500);
+                            return;
                         }
                         
+                        // 清理旧图表
+                        if (this.resourceChart) {
+                            try {
+                                this.resourceChart.destroy();
+                                this.resourceChart = null;
+                                console.log('[Chart] 旧图表已销毁');
+                            } catch (e) {
+                                console.error('[Chart] 销毁旧图表失败:', e);
+                            }
+                        }
+                        
+                        // 创建新图表
                         try {
-                            this.resourceChart = new Chart(ctx.getContext('2d'), {
+                            const ctx = canvas.getContext('2d');
+                            
+                            // 创建图表配置 - 简化版本确保兼容性
+                            const config = {
                                 type: 'line',
                                 data: {
                                     labels: [],
-                                    datasets: [{
-                                        label: 'CPU使用率',
-                                        data: [],
-                                        borderColor: '#2196F3',
-                                        backgroundColor: 'rgba(33, 150, 243, 0.1)',
-                                        tension: 0.4,
-                                        fill: true,
-                                        pointRadius: 2,
-                                        borderWidth: 2
-                                    }, {
-                                        label: '内存使用率',
-                                        data: [],
-                                        borderColor: '#4CAF50',
-                                        backgroundColor: 'rgba(76, 175, 80, 0.1)',
-                                        tension: 0.4,
-                                        fill: true,
-                                        pointRadius: 2,
-                                        borderWidth: 2
-                                    }]
+                                    datasets: [
+                                        {
+                                            label: 'CPU使用率',
+                                            data: [],
+                                            borderColor: 'rgb(33, 150, 243)',
+                                            backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                                            borderWidth: 2,
+                                            fill: true,
+                                            tension: 0.3,
+                                            pointRadius: 2,
+                                            pointHoverRadius: 4
+                                        },
+                                        {
+                                            label: '内存使用率',
+                                            data: [],
+                                            borderColor: 'rgb(76, 175, 80)',
+                                            backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                                            borderWidth: 2,
+                                            fill: true,
+                                            tension: 0.3,
+                                            pointRadius: 2,
+                                            pointHoverRadius: 4
+                                        }
+                                    ]
                                 },
                                 options: {
                                     responsive: true,
                                     maintainAspectRatio: false,
-                                    animation: {
-                                        duration: 750,
-                                    },
                                     interaction: {
                                         mode: 'index',
-                                        intersect: false,
+                                        intersect: false
                                     },
                                     plugins: {
                                         legend: {
+                                            display: true,
                                             position: 'top',
                                             labels: {
-                                                usePointStyle: true,
                                                 padding: 10,
-                                                font: {
-                                                    size: 12
-                                                }
+                                                font: { size: 12 },
+                                                usePointStyle: true,
+                                                boxWidth: 10
                                             }
                                         },
                                         tooltip: {
                                             mode: 'index',
                                             intersect: false,
-                                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                                            titleColor: '#fff',
-                                            bodyColor: '#fff',
-                                            borderColor: '#ddd',
-                                            borderWidth: 1,
-                                            cornerRadius: 4,
-                                            padding: 10,
                                             callbacks: {
                                                 label: function(context) {
-                                                    let label = context.dataset.label || '';
-                                                    if (label) {
-                                                        label += ': ';
-                                                    }
-                                                    label += context.parsed.y.toFixed(1) + '%';
-                                                    return label;
+                                                    return context.dataset.label + ': ' + 
+                                                           (context.parsed.y || 0).toFixed(1) + '%';
                                                 }
                                             }
                                         }
@@ -2715,92 +2771,123 @@
                                     scales: {
                                         x: {
                                             display: true,
-                                            grid: {
-                                                display: false
-                                            },
+                                            grid: { display: false },
                                             ticks: {
                                                 maxRotation: 0,
-                                                autoSkipPadding: 10
+                                                autoSkip: true,
+                                                maxTicksLimit: 10
                                             }
                                         },
                                         y: {
                                             display: true,
-                                            beginAtZero: true,
+                                            min: 0,
                                             max: 100,
-                                            ticks: {
-                                                callback: function(value) {
-                                                    return value + '%';
-                                                },
-                                                stepSize: 25
-                                            },
                                             grid: {
                                                 color: 'rgba(0, 0, 0, 0.05)'
+                                            },
+                                            ticks: {
+                                                stepSize: 25,
+                                                callback: function(value) {
+                                                    return value + '%';
+                                                }
                                             }
                                         }
+                                    },
+                                    animation: {
+                                        duration: 200
                                     }
                                 }
-                            });
+                            };
                             
-                            console.log('系统资源图表初始化成功');
+                            // 创建图表实例
+                            this.resourceChart = new Chart(ctx, config);
                             
-                            // 初始化后立即获取一次数据
+                            console.log('[Chart] ✅ 图表创建成功！');
+                            
+                            // 添加初始数据点（避免空白）
+                            const now = Date.now();
+                            for (let i = 5; i > 0; i--) {
+                                const time = new Date(now - i * 3000);
+                                this.resourceChart.data.labels.push(
+                                    time.toLocaleTimeString('zh-CN', {
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                        second: '2-digit'
+                                    })
+                                );
+                                this.resourceChart.data.datasets[0].data.push(0);
+                                this.resourceChart.data.datasets[1].data.push(0);
+                            }
+                            this.resourceChart.update('none');
+                            
+                            // 立即获取数据
                             this.fetchSystemStats();
+                            
                         } catch (error) {
-                            console.error('初始化图表失败:', error);
-                            // 失败后延迟重试
-                            setTimeout(() => this.initResourceChart(), 500);
+                            console.error('[Chart] ❌ 创建图表失败:', error);
+                            this.resourceChart = null;
                         }
-                    });
+                    }, 300); // 延迟300ms确保DOM渲染
                 },
                 
                 updateResourceChart() {
+                    // 检查图表是否存在
                     if (!this.resourceChart) {
-                        console.log('图表未初始化，尝试初始化...');
+                        console.log('[Chart] 图表不存在，尝试初始化...');
                         this.initResourceChart();
                         return;
                     }
                     
+                    // 检查数据
                     if (!this.systemStats) {
-                        console.log('系统统计数据未准备好');
+                        console.log('[Chart] 无系统数据');
                         return;
                     }
                     
                     try {
-                        const chart = this.resourceChart;
-                        const now = new Date().toLocaleTimeString('zh-CN', { 
-                            hour: '2-digit', 
-                            minute: '2-digit', 
-                            second: '2-digit' 
+                        // 获取当前时间
+                        const now = new Date().toLocaleTimeString('zh-CN', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit'
                         });
                         
-                        // 添加新标签
-                        chart.data.labels.push(now);
-                        if (chart.data.labels.length > 20) {
-                            chart.data.labels.shift();
+                        // 获取数据值（确保是数字）
+                        const cpuUsage = parseFloat(this.systemStats?.cpu?.total) || 0;
+                        const memoryUsage = parseFloat(this.systemStats?.memory?.total) || 0;
+                        
+                        console.log(`[Chart] 更新数据 - CPU: ${cpuUsage}%, 内存: ${memoryUsage}%`);
+                        
+                        // 检查图表数据结构
+                        if (!this.resourceChart.data) {
+                            console.error('[Chart] 图表数据结构损坏');
+                            this.initResourceChart();
+                            return;
                         }
-                        
-                        // 安全获取数据，提供默认值
-                        const cpuUsage = this.systemStats?.cpu?.total ?? 0;
-                        const memoryUsage = this.systemStats?.memory?.total ?? 0;
-                        
-                        console.log(`更新图表数据 - CPU: ${cpuUsage.toFixed(1)}%, 内存: ${memoryUsage.toFixed(1)}%`);
                         
                         // 添加新数据点
-                        chart.data.datasets[0].data.push(cpuUsage);
-                        chart.data.datasets[1].data.push(memoryUsage);
+                        this.resourceChart.data.labels.push(now);
+                        this.resourceChart.data.datasets[0].data.push(cpuUsage);
+                        this.resourceChart.data.datasets[1].data.push(memoryUsage);
                         
-                        // 保持数据点数量
-                        if (chart.data.datasets[0].data.length > 20) {
-                            chart.data.datasets[0].data.shift();
-                        }
-                        if (chart.data.datasets[1].data.length > 20) {
-                            chart.data.datasets[1].data.shift();
+                        // 限制数据点数量（最多保留20个）
+                        const maxPoints = 20;
+                        while (this.resourceChart.data.labels.length > maxPoints) {
+                            this.resourceChart.data.labels.shift();
+                            this.resourceChart.data.datasets[0].data.shift();
+                            this.resourceChart.data.datasets[1].data.shift();
                         }
                         
-                        // 更新图表
-                        chart.update('none');
+                        // 更新图表显示
+                        this.resourceChart.update('none');
+                        
+                        console.log('[Chart] ✅ 数据更新成功');
+                        
                     } catch (error) {
-                        console.error('更新图表失败:', error);
+                        console.error('[Chart] ❌ 更新失败:', error);
+                        // 尝试重新初始化
+                        this.resourceChart = null;
+                        this.initResourceChart();
                     }
                 },
                 
@@ -2834,14 +2921,24 @@
                     this.isAuthenticated = true;
                     this.initializeApp();
                     
-                    // 改进图表初始化时机
+                    // 初始页面是仪表板时的处理
                     if (this.currentPage === 'dashboard') {
-                        // 使用 requestAnimationFrame 确保在下一帧渲染后初始化
-                        requestAnimationFrame(() => {
+                        console.log('[Mount] 初始页面是仪表板');
+                        
+                        // 等待页面加载完成
+                        if (document.readyState === 'complete') {
+                            // 页面已加载，直接初始化
                             setTimeout(() => {
                                 this.initResourceChart();
-                            }, 300);
-                        });
+                            }, 500);
+                        } else {
+                            // 等待页面加载完成
+                            window.addEventListener('load', () => {
+                                setTimeout(() => {
+                                    this.initResourceChart();
+                                }, 500);
+                            });
+                        }
                     }
                 }
                 
@@ -2871,7 +2968,9 @@
                 
                 // 清理图表
                 if (this.resourceChart) {
+                    console.log('[Unmount] 清理图表实例');
                     this.resourceChart.destroy();
+                    this.resourceChart = null;
                 }
             }
         }).mount('#app');
