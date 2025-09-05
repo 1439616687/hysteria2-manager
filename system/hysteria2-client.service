@@ -4,16 +4,22 @@ Documentation=https://v2.hysteria.network/
 After=network-online.target nss-lookup.target
 Wants=network-online.target
 
-# 依赖关系
-# 如果管理器服务停止，客户端也应该停止
-BindsTo=hysteria2-manager.service
-After=hysteria2-manager.service
+# 依赖检查
+ConditionPathExists=/usr/local/bin/hysteria
+ConditionPathExists=/etc/hysteria2/client.yaml
+
+# 冲突检查
+Conflicts=hysteria-server.service
+Conflicts=v2ray.service
+Conflicts=xray.service
 
 [Service]
 # 服务类型
 Type=simple
+Restart=on-failure
+RestartSec=10
 
-# 运行用户（需要root权限来创建TUN设备）
+# 用户和权限
 User=root
 Group=root
 
@@ -22,78 +28,107 @@ WorkingDirectory=/etc/hysteria2
 
 # 环境变量
 Environment="PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+Environment="HYSTERIA_LOG_LEVEL=info"
+Environment="GOGC=50"
 
-# 启动前准备
-# 清理可能存在的旧TUN接口
+# 网络命名空间（可选）
+# NetworkNamespacePath=/var/run/netns/hysteria
+
+# TUN接口清理和准备
 ExecStartPre=-/usr/sbin/ip link delete hytun 2>/dev/null
-# 等待网络就绪
 ExecStartPre=/bin/sleep 2
-# 检查配置文件
-ExecStartPre=/bin/bash -c 'if [ ! -f /etc/hysteria2/client.yaml ]; then echo "配置文件不存在，请先选择节点"; exit 1; fi'
-# 验证配置（可选）
-ExecStartPre=/usr/local/bin/hysteria client -c /etc/hysteria2/client.yaml --test
+ExecStartPre=/bin/bash -c 'test -f /etc/hysteria2/client.yaml || exit 1'
+ExecStartPre=/bin/bash -c '/usr/local/bin/hysteria version || exit 1'
 
-# 启动命令
+# 主进程启动命令
 ExecStart=/usr/local/bin/hysteria client -c /etc/hysteria2/client.yaml
 
 # 停止后清理
 ExecStopPost=-/usr/sbin/ip link delete hytun 2>/dev/null
-ExecStopPost=-/bin/bash -c 'ip route flush cache'
+ExecStopPost=/bin/bash -c 'iptables -t nat -D POSTROUTING -o hytun -j MASQUERADE 2>/dev/null || true'
+ExecStopPost=/bin/bash -c 'ip rule del fwmark 0x1 table 100 2>/dev/null || true'
+ExecStopPost=/bin/bash -c 'ip route del default dev hytun table 100 2>/dev/null || true'
 
-# 重启策略
-Restart=on-failure
-RestartSec=10
-StartLimitInterval=120
-StartLimitBurst=5
-
-# 停止超时
-TimeoutStartSec=30
-TimeoutStopSec=10
+# 重载配置
+ExecReload=/bin/kill -HUP $MAINPID
 
 # 进程管理
 KillMode=mixed
 KillSignal=SIGTERM
+TimeoutStartSec=30
+TimeoutStopSec=10
 SendSIGKILL=yes
+
+# 重启策略
+StartLimitInterval=120
+StartLimitBurst=5
 
 # 资源限制
 LimitNOFILE=1048576
 LimitNPROC=512
-LimitCORE=0
-# 内存限制（可根据需要调整）
-# MemoryLimit=256M
-# CPUQuota=50%
+LimitCORE=infinity
+TasksMax=512
 
-# 网络权限（重要！）
-CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_RAW CAP_NET_BIND_SERVICE CAP_SYS_PTRACE CAP_DAC_READ_SEARCH
-AmbientCapabilities=CAP_NET_ADMIN CAP_NET_RAW CAP_NET_BIND_SERVICE
+# 内存管理
+MemoryMax=256M
+MemorySwapMax=0
+MemoryAccounting=true
+
+# CPU管理
+CPUWeight=200
+CPUAccounting=true
+
+# 网络权限
+AmbientCapabilities=CAP_NET_ADMIN CAP_NET_RAW CAP_NET_BIND_SERVICE CAP_SYS_PTRACE CAP_DAC_READ_SEARCH
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_RAW CAP_NET_BIND_SERVICE CAP_SYS_PTRACE CAP_DAC_READ_SEARCH CAP_SETUID CAP_SETGID
+SecureBits=keep-caps
 
 # 安全设置
 NoNewPrivileges=false
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=true
-ReadWritePaths=/etc/hysteria2 /var/log/hysteria2
-# 允许访问/dev/net/tun设备
+ProtectKernelTunables=false
+ProtectKernelModules=false
+ProtectControlGroups=true
+RestrictRealtime=true
+RestrictNamespaces=false
+LockPersonality=true
+RemoveIPC=false
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK AF_PACKET
+SystemCallFilter=~@clock @cpu-emulation @debug @module @mount @obsolete @raw-io @reboot @swap
+
+# 文件系统权限
+ReadWritePaths=/etc/hysteria2
+ReadWritePaths=/var/log/hysteria2
+ReadWritePaths=/run
+ReadWritePaths=/var/run
+ReadOnlyPaths=/usr/local/bin
+
+# 设备访问（TUN需要）
 PrivateDevices=no
 DeviceAllow=/dev/net/tun rw
+DeviceAllow=/dev/null rw
+DeviceAllow=/dev/urandom r
+DevicePolicy=strict
 
-# 日志
+# 日志设置
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=hysteria2-client
+LogLevelMax=info
 
-# 性能优化
-CPUSchedulingPolicy=other
-CPUSchedulingPriority=0
-IOSchedulingClass=best-effort
-IOSchedulingPriority=4
+# 环境文件（可选）
+EnvironmentFile=-/etc/default/hysteria2-client
 
-# 环境检查（可选）
-# AssertPathExists=/usr/local/bin/hysteria
-# AssertPathExists=/etc/hysteria2
-# AssertCapability=CAP_NET_ADMIN
+# 监控
+WatchdogSec=60
+NotifyAccess=none
+
+# OOM设置
+OOMScoreAdjust=-500
 
 [Install]
 WantedBy=multi-user.target
-# 当管理器启动时自动启动
-# WantedBy=hysteria2-manager.service
+Alias=hy2-client.service
+Also=hysteria2-manager.service
