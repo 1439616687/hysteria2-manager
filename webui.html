@@ -1415,6 +1415,10 @@
                             <div class="card">
                                 <div class="card-header">
                                     <h3 class="card-title">系统资源</h3>
+                                    <div class="flex gap-3 text-small">
+                                        <span>CPU: <strong style="color: #2196F3;">{{ systemStats?.cpu?.total?.toFixed(1) || '0' }}%</strong></span>
+                                        <span>内存: <strong style="color: #4CAF50;">{{ systemStats?.memory?.total?.toFixed(1) || '0' }}%</strong></span>
+                                    </div>
                                 </div>
                                 <div style="height: 250px; position: relative;">
                                     <canvas id="resourceChart"></canvas>
@@ -2042,6 +2046,18 @@
                     if (page === 'logs') {
                         this.fetchLogs();
                     }
+                    
+                    // 切换到仪表板时初始化图表
+                    if (page === 'dashboard') {
+                        this.$nextTick(() => {
+                            // 确保图表容器存在
+                            if (!this.resourceChart) {
+                                setTimeout(() => {
+                                    this.initResourceChart();
+                                }, 100);
+                            }
+                        });
+                    }
                 },
                 
                 toggleSidebar() {
@@ -2115,7 +2131,10 @@
                         const response = await axios.get(`${API_BASE}/system/stats`);
                         if (response.data.success) {
                             this.systemStats = response.data.data;
-                            this.updateResourceChart();
+                            // 只有在仪表板页面才更新图表
+                            if (this.currentPage === 'dashboard' && this.resourceChart) {
+                                this.updateResourceChart();
+                            }
                         }
                     } catch (error) {
                         console.error('获取系统统计失败:', error);
@@ -2500,68 +2519,132 @@
                 // ==================== 图表相关 ====================
                 initResourceChart() {
                     const ctx = document.getElementById('resourceChart');
-                    if (!ctx) return;
+                    if (!ctx) {
+                        console.log('图表容器未找到，稍后重试...');
+                        return;
+                    }
                     
-                    this.resourceChart = new Chart(ctx, {
-                        type: 'line',
-                        data: {
-                            labels: [],
-                            datasets: [{
-                                label: 'CPU使用率',
-                                data: [],
-                                borderColor: '#2196F3',
-                                backgroundColor: 'rgba(33, 150, 243, 0.1)',
-                                tension: 0.4
-                            }, {
-                                label: '内存使用率',
-                                data: [],
-                                borderColor: '#4CAF50',
-                                backgroundColor: 'rgba(76, 175, 80, 0.1)',
-                                tension: 0.4
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                legend: {
-                                    position: 'top',
-                                }
+                    // 如果图表已存在，先销毁
+                    if (this.resourceChart) {
+                        this.resourceChart.destroy();
+                    }
+                    
+                    try {
+                        this.resourceChart = new Chart(ctx, {
+                            type: 'line',
+                            data: {
+                                labels: [],
+                                datasets: [{
+                                    label: 'CPU使用率',
+                                    data: [],
+                                    borderColor: '#2196F3',
+                                    backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                                    tension: 0.4,
+                                    fill: true
+                                }, {
+                                    label: '内存使用率',
+                                    data: [],
+                                    borderColor: '#4CAF50',
+                                    backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                                    tension: 0.4,
+                                    fill: true
+                                }]
                             },
-                            scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    max: 100,
-                                    ticks: {
-                                        callback: function(value) {
-                                            return value + '%';
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                interaction: {
+                                    mode: 'index',
+                                    intersect: false,
+                                },
+                                plugins: {
+                                    legend: {
+                                        position: 'top',
+                                        labels: {
+                                            usePointStyle: true,
+                                            padding: 10
+                                        }
+                                    },
+                                    tooltip: {
+                                        mode: 'index',
+                                        intersect: false,
+                                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                        titleColor: '#fff',
+                                        bodyColor: '#fff',
+                                        borderColor: '#ddd',
+                                        borderWidth: 1,
+                                        cornerRadius: 4,
+                                        padding: 10
+                                    }
+                                },
+                                scales: {
+                                    x: {
+                                        display: true,
+                                        grid: {
+                                            display: false
+                                        }
+                                    },
+                                    y: {
+                                        display: true,
+                                        beginAtZero: true,
+                                        max: 100,
+                                        ticks: {
+                                            callback: function(value) {
+                                                return value + '%';
+                                            },
+                                            stepSize: 25
+                                        },
+                                        grid: {
+                                            color: 'rgba(0, 0, 0, 0.05)'
                                         }
                                     }
                                 }
                             }
+                        });
+                        
+                        // 立即更新一次图表
+                        if (this.systemStats) {
+                            this.updateResourceChart();
                         }
-                    });
+                        
+                        console.log('系统资源图表初始化成功');
+                    } catch (error) {
+                        console.error('初始化图表失败:', error);
+                    }
                 },
                 
                 updateResourceChart() {
-                    if (!this.resourceChart || !this.systemStats) return;
+                    if (!this.resourceChart || !this.systemStats) {
+                        console.log('图表或数据未准备好');
+                        return;
+                    }
                     
                     const chart = this.resourceChart;
-                    const now = new Date().toLocaleTimeString();
+                    const now = new Date().toLocaleTimeString('zh-CN', { 
+                        hour: '2-digit', 
+                        minute: '2-digit', 
+                        second: '2-digit' 
+                    });
                     
+                    // 添加新数据
                     chart.data.labels.push(now);
                     if (chart.data.labels.length > 20) {
                         chart.data.labels.shift();
                     }
                     
-                    chart.data.datasets[0].data.push(this.systemStats.cpu?.total || 0);
-                    chart.data.datasets[1].data.push(this.systemStats.memory?.total || 0);
+                    // 确保数据存在
+                    const cpuUsage = this.systemStats.cpu?.total || 0;
+                    const memoryUsage = this.systemStats.memory?.total || 0;
+                    
+                    chart.data.datasets[0].data.push(cpuUsage);
+                    chart.data.datasets[1].data.push(memoryUsage);
                     
                     if (chart.data.datasets[0].data.length > 20) {
                         chart.data.datasets[0].data.shift();
                         chart.data.datasets[1].data.shift();
                     }
                     
+                    // 使用更平滑的动画
                     chart.update('none');
                 },
                 
@@ -2581,13 +2664,6 @@
                     this.statsTimer = setInterval(() => {
                         this.fetchSystemStats();
                     }, 3000);
-                    
-                    // 初始化图表
-                    this.$nextTick(() => {
-                        setTimeout(() => {
-                            this.initResourceChart();
-                        }, 500);
-                    });
                 }
             },
             
@@ -2601,6 +2677,15 @@
                     this.username = username;
                     this.isAuthenticated = true;
                     this.initializeApp();
+                    
+                    // 如果初始页面是仪表板，初始化图表
+                    if (this.currentPage === 'dashboard') {
+                        this.$nextTick(() => {
+                            setTimeout(() => {
+                                this.initResourceChart();
+                            }, 500);
+                        });
+                    }
                 }
                 
                 // 初始化主题
@@ -2625,6 +2710,11 @@
                 }
                 if (this.statsTimer) {
                     clearInterval(this.statsTimer);
+                }
+                
+                // 清理图表
+                if (this.resourceChart) {
+                    this.resourceChart.destroy();
                 }
             }
         }).mount('#app');
