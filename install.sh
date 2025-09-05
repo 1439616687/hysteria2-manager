@@ -1,14 +1,14 @@
 #!/bin/bash
 
 # Hysteria2 Manager - 一键安装脚本
-# 项目地址: https://github.com/yourusername/hysteria2-manager
+# 项目地址: https://github.com/1439616687/hysteria2-manager
 # 版权信息: MIT License
 # 版本: v1.0.0
 
 set -e
 
 # ================== 配置变量 ==================
-GITHUB_REPO="yourusername/hysteria2-manager"
+GITHUB_REPO="1439616687/hysteria2-manager"
 INSTALL_DIR="/opt/hysteria2-manager"
 DATA_DIR="$INSTALL_DIR/data"
 SYSTEM_DIR="$INSTALL_DIR/system"
