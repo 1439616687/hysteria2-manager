@@ -275,6 +275,35 @@ class AuthManager:
         save_json_file(USERS_FILE, users_list)
         logger.info(f"用户密码已更新: {username}")
         return True
+    
+    def change_username(self, old_username: str, password: str, new_username: str) -> bool:
+        """修改用户名"""
+        # 验证原用户
+        user = self.users.get(old_username)
+        if not user:
+            return False
+        
+        # 验证密码
+        if not self.verify_password(password, user['password']):
+            return False
+        
+        # 检查新用户名是否已存在
+        if new_username in self.users:
+            return False
+        
+        # 更新用户名
+        user['username'] = new_username
+        
+        # 重新构建用户字典
+        del self.users[old_username]
+        self.users[new_username] = user
+        
+        # 保存到文件
+        users_list = list(self.users.values())
+        save_json_file(USERS_FILE, users_list)
+        
+        logger.info(f"用户名已更新: {old_username} -> {new_username}")
+        return True
 
 # ==================== Hysteria2管理器 ====================
 class Hysteria2Manager:
@@ -677,9 +706,9 @@ class Hysteria2Manager:
         return result
     
     def get_system_stats(self) -> Dict[str, Any]:
-        """获取系统统计信息"""
+        """获取系统统计信息 - 修复版本"""
         try:
-            # CPU使用率
+            # CPU使用率 - 使用interval参数获取准确值
             cpu_percent = psutil.cpu_percent(interval=1)
             
             # 内存信息
@@ -694,30 +723,37 @@ class Hysteria2Manager:
             # Hysteria进程信息
             hysteria_info = {"cpu": 0, "memory": 0, "pid": None}
             for proc in psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_info']):
-                if 'hysteria' in proc.info['name'].lower():
-                    hysteria_info["pid"] = proc.info['pid']
-                    hysteria_info["cpu"] = proc.cpu_percent(interval=0.1)
-                    hysteria_info["memory"] = proc.memory_info().rss / 1024 / 1024  # MB
+                try:
+                    if 'hysteria' in proc.info['name'].lower():
+                        hysteria_info["pid"] = proc.info['pid']
+                        hysteria_info["cpu"] = proc.cpu_percent(interval=0.1)
+                        hysteria_info["memory"] = proc.memory_info().rss / 1024 / 1024  # MB
+                        break
+                except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                    pass
             
+            # 返回格式化的数据，确保前端能正确访问
             return {
                 "cpu": {
-                    "total": cpu_percent,
-                    "hysteria": hysteria_info["cpu"]
+                    "total": round(cpu_percent, 1),  # 确保是浮点数
+                    "hysteria": round(hysteria_info["cpu"], 1)
                 },
                 "memory": {
-                    "total": mem.percent,
+                    "total": round(mem.percent, 1),  # 确保是浮点数
                     "used": mem.used // (1024 * 1024),  # MB
                     "available": mem.available // (1024 * 1024),  # MB
-                    "hysteria": hysteria_info["memory"]
+                    "hysteria": round(hysteria_info["memory"], 1)
                 },
                 "disk": {
                     "total": disk.total // (1024 * 1024 * 1024),  # GB
                     "used": disk.used // (1024 * 1024 * 1024),  # GB
-                    "percent": disk.percent
+                    "percent": round(disk.percent, 1)
                 },
                 "network": {
                     "bytes_sent": net_io.bytes_sent,
-                    "bytes_recv": net_io.bytes_recv
+                    "bytes_recv": net_io.bytes_recv,
+                    "packets_sent": net_io.packets_sent,
+                    "packets_recv": net_io.packets_recv
                 },
                 "uptime": int(time.time() - psutil.boot_time()),
                 "hysteria_running": hysteria_info["pid"] is not None
@@ -725,11 +761,19 @@ class Hysteria2Manager:
             
         except Exception as e:
             logger.error(f"获取系统统计失败: {e}")
-            return {}
+            # 返回默认值，确保前端不会崩溃
+            return {
+                "cpu": {"total": 0, "hysteria": 0},
+                "memory": {"total": 0, "used": 0, "available": 0, "hysteria": 0},
+                "disk": {"total": 0, "used": 0, "percent": 0},
+                "network": {"bytes_sent": 0, "bytes_recv": 0, "packets_sent": 0, "packets_recv": 0},
+                "uptime": 0,
+                "hysteria_running": False
+            }
 
 # ==================== Flask应用 ====================
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins="*", allow_headers="*", methods="*")  # 开发环境配置
 app.config['SECRET_KEY'] = os.environ.get('FLASK_SECRET', 'hysteria2-flask-secret-key')
 
 # 全局对象
@@ -823,6 +867,34 @@ def api_change_password():
         return jsonify({"success": True, "message": "密码修改成功"})
     else:
         return jsonify({"success": False, "message": "原密码错误"}), 400
+
+@app.route('/api/change_username', methods=['POST'])
+@require_auth
+def api_change_username():
+    """修改用户名 - 新增功能"""
+    data = request.get_json()
+    password = data.get('password')
+    new_username = data.get('new_username')
+    
+    if not password or not new_username:
+        return jsonify({"success": False, "message": "密码和新用户名不能为空"}), 400
+    
+    if len(new_username) < 3:
+        return jsonify({"success": False, "message": "用户名长度至少3位"}), 400
+    
+    if len(new_username) > 20:
+        return jsonify({"success": False, "message": "用户名长度不能超过20位"}), 400
+    
+    # 验证用户名格式（只允许字母数字和下划线）
+    import re
+    if not re.match(r'^[a-zA-Z0-9_]+$', new_username):
+        return jsonify({"success": False, "message": "用户名只能包含字母、数字和下划线"}), 400
+    
+    current_username = g.user['username']
+    if auth_manager.change_username(current_username, password, new_username):
+        return jsonify({"success": True, "message": "用户名修改成功"})
+    else:
+        return jsonify({"success": False, "message": "密码错误或新用户名已存在"}), 400
 
 @app.route('/api/status')
 @require_auth
