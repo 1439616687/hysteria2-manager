@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 """
-Hysteria2 Manager - 核心管理程序
-提供WebUI服务器、API接口、节点管理、系统控制等所有功能
+Hysteria2 Manager v2.0 - 核心管理程序
+完整重构版本，包含认证系统和所有问题修复
 """
 
 import os
@@ -17,34 +17,43 @@ import hashlib
 import logging
 import subprocess
 import threading
+import socket
+import secrets
+import functools
 import urllib.parse
 from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any, Tuple
 
-import psutil
-from flask import Flask, request, jsonify, send_from_directory, render_template_string
+# Flask相关
+from flask import Flask, request, jsonify, send_from_directory, session, g
 from flask_cors import CORS
+from werkzeug.security import generate_password_hash, check_password_hash
+
+# 系统监控
+import psutil
 
 # ==================== 配置常量 ====================
-VERSION = "1.0.0"
+VERSION = "2.0.0"
 INSTALL_DIR = Path("/opt/hysteria2-manager")
 DATA_DIR = INSTALL_DIR / "data"
 STATIC_DIR = INSTALL_DIR / "static"
 CONFIG_FILE = DATA_DIR / "config.json"
 NODES_FILE = DATA_DIR / "nodes.json"
+USERS_FILE = DATA_DIR / "users.json"
 HYSTERIA_CONFIG = Path("/etc/hysteria2/client.yaml")
 HYSTERIA_BIN = Path("/usr/local/bin/hysteria")
 LOG_DIR = Path("/var/log/hysteria2")
 
 # 确保目录存在
-HYSTERIA_CONFIG.parent.mkdir(parents=True, exist_ok=True)
-LOG_DIR.mkdir(parents=True, exist_ok=True)
+for dir_path in [HYSTERIA_CONFIG.parent, LOG_DIR, DATA_DIR, STATIC_DIR]:
+    dir_path.mkdir(parents=True, exist_ok=True)
 
 # ==================== 日志配置 ====================
+log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    format=log_format,
     handlers=[
         logging.FileHandler(LOG_DIR / "manager.log"),
         logging.StreamHandler()
@@ -54,25 +63,30 @@ logger = logging.getLogger(__name__)
 
 # ==================== Flask应用初始化 ====================
 app = Flask(__name__, static_folder=str(STATIC_DIR))
-CORS(app)
+CORS(app, supports_credentials=True)
 
 # ==================== 全局变量 ====================
 config_data = {}
 nodes_data = {}
+users_data = {}
+service_status = {
+    "hysteria": "stopped",
+    "manager": "running",
+    "tun_interface": False,
+    "last_check": time.time()
+}
 stats_cache = {
     "traffic": {"up": 0, "down": 0, "total": 0},
     "connections": 0,
     "uptime": 0,
+    "cpu_history": [],
+    "memory_history": [],
     "last_update": time.time()
 }
 monitor_thread = None
-service_status = {
-    "hysteria": "stopped",
-    "manager": "running",
-    "tun_interface": False
-}
+session_cleanup_thread = None
 
-# ==================== 工具函数 ====================
+# ==================== 配置和数据管理 ====================
 def load_config():
     """加载配置文件"""
     global config_data
@@ -81,33 +95,48 @@ def load_config():
             with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
                 config_data = json.load(f)
         else:
-            # 创建默认配置
-            config_data = {
-                "version": VERSION,
-                "web_port": 8080,
-                "web_host": "0.0.0.0",
-                "language": "zh-CN",
-                "theme": "auto",
-                "auth": {
-                    "enabled": False,
-                    "username": "admin",
-                    "password": ""
-                },
-                "hysteria": {
-                    "bin_path": str(HYSTERIA_BIN),
-                    "config_path": str(HYSTERIA_CONFIG),
-                    "log_level": "info"
-                },
-                "system": {
-                    "auto_start": True,
-                    "auto_optimize": True,
-                    "check_update": True
-                }
-            }
+            config_data = create_default_config()
             save_config()
+        
+        # 设置Flask密钥
+        app.secret_key = config_data.get('secret_key', secrets.token_hex(32))
+        logger.info(f"配置加载成功，版本: {config_data.get('version', 'unknown')}")
     except Exception as e:
         logger.error(f"加载配置失败: {e}")
-        config_data = {}
+        config_data = create_default_config()
+
+def create_default_config():
+    """创建默认配置"""
+    return {
+        "version": VERSION,
+        "web_port": 8080,
+        "web_host": "0.0.0.0",
+        "language": "zh-CN",
+        "theme": "light",
+        "secret_key": secrets.token_hex(32),
+        "auth": {
+            "enabled": True,
+            "username": "admin",
+            "password": generate_password_hash("admin"),
+            "session_timeout": 3600
+        },
+        "hysteria": {
+            "bin_path": str(HYSTERIA_BIN),
+            "config_path": str(HYSTERIA_CONFIG),
+            "log_level": "info"
+        },
+        "system": {
+            "auto_start": True,
+            "auto_optimize": True,
+            "check_update": True,
+            "log_retention_days": 7
+        },
+        "security": {
+            "max_login_attempts": 5,
+            "lockout_duration": 300,
+            "require_https": False
+        }
+    }
 
 def save_config():
     """保存配置文件"""
@@ -130,12 +159,13 @@ def load_nodes():
             nodes_data = {
                 "nodes": [],
                 "current": None,
-                "subscriptions": []
+                "subscriptions": [],
+                "groups": []
             }
             save_nodes()
     except Exception as e:
         logger.error(f"加载节点失败: {e}")
-        nodes_data = {"nodes": [], "current": None, "subscriptions": []}
+        nodes_data = {"nodes": [], "current": None, "subscriptions": [], "groups": []}
 
 def save_nodes():
     """保存节点数据"""
@@ -147,6 +177,91 @@ def save_nodes():
         logger.error(f"保存节点失败: {e}")
         return False
 
+def load_users():
+    """加载用户数据"""
+    global users_data
+    try:
+        if USERS_FILE.exists():
+            with open(USERS_FILE, 'r', encoding='utf-8') as f:
+                users_data = json.load(f)
+        else:
+            users_data = {
+                "users": [
+                    {
+                        "id": 1,
+                        "username": "admin",
+                        "password": generate_password_hash("admin"),
+                        "role": "admin",
+                        "created_at": datetime.now().isoformat(),
+                        "last_login": None,
+                        "status": "active",
+                        "failed_attempts": 0,
+                        "locked_until": None
+                    }
+                ],
+                "sessions": {}
+            }
+            save_users()
+    except Exception as e:
+        logger.error(f"加载用户数据失败: {e}")
+        users_data = {"users": [], "sessions": {}}
+
+def save_users():
+    """保存用户数据"""
+    try:
+        with open(USERS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(users_data, f, indent=2, ensure_ascii=False)
+        return True
+    except Exception as e:
+        logger.error(f"保存用户数据失败: {e}")
+        return False
+
+# ==================== 认证装饰器 ====================
+def login_required(f):
+    """需要登录的装饰器"""
+    @functools.wraps(f)
+    def decorated_function(*args, **kwargs):
+        # 检查是否启用认证
+        if not config_data.get('auth', {}).get('enabled', True):
+            return f(*args, **kwargs)
+        
+        # 检查会话
+        if 'user_id' not in session:
+            return jsonify({"success": False, "message": "未登录", "code": 401}), 401
+        
+        # 检查会话是否过期
+        session_id = session.get('session_id')
+        if session_id and session_id in users_data.get('sessions', {}):
+            session_info = users_data['sessions'][session_id]
+            if datetime.now().timestamp() > session_info.get('expires_at', 0):
+                # 会话过期
+                del users_data['sessions'][session_id]
+                session.clear()
+                save_users()
+                return jsonify({"success": False, "message": "会话已过期", "code": 401}), 401
+            
+            # 更新最后活动时间
+            session_info['last_activity'] = datetime.now().isoformat()
+            save_users()
+        
+        return f(*args, **kwargs)
+    return decorated_function
+
+def admin_required(f):
+    """需要管理员权限的装饰器"""
+    @functools.wraps(f)
+    @login_required
+    def decorated_function(*args, **kwargs):
+        user_id = session.get('user_id')
+        user = next((u for u in users_data.get('users', []) if u['id'] == user_id), None)
+        
+        if not user or user.get('role') != 'admin':
+            return jsonify({"success": False, "message": "需要管理员权限", "code": 403}), 403
+        
+        return f(*args, **kwargs)
+    return decorated_function
+
+# ==================== 工具函数 ====================
 def run_command(cmd: List[str], timeout: int = 10) -> Tuple[int, str, str]:
     """执行系统命令"""
     try:
@@ -163,76 +278,126 @@ def run_command(cmd: List[str], timeout: int = 10) -> Tuple[int, str, str]:
     except Exception as e:
         return -2, "", str(e)
 
+def get_server_ip(server: str) -> str:
+    """解析服务器域名为IP地址"""
+    try:
+        # 检查是否已经是IP地址
+        socket.inet_aton(server)
+        return server
+    except socket.error:
+        # 是域名，需要解析
+        try:
+            ip = socket.gethostbyname(server)
+            logger.info(f"解析域名 {server} -> {ip}")
+            return ip
+        except socket.gaierror as e:
+            logger.warning(f"无法解析域名 {server}: {e}")
+            # 返回常见公共DNS作为后备
+            return server
+
 def parse_hysteria2_url(url: str) -> Optional[Dict[str, Any]]:
     """
     解析Hysteria2节点链接
     支持格式:
-    - hy2://password@server:port/?参数
-    - hysteria2://password@server:port/?参数
+    - hy2://password@server:port/?参数#名称
+    - hysteria2://password@server:port/?参数#名称
+    - hysteria://password@server:port/?参数#名称
     """
     try:
-        # URL解码
-        url = urllib.parse.unquote(url)
+        # 完整URL解码
+        url = urllib.parse.unquote(url.strip())
+        
+        # 分离fragment（节点名称）
+        custom_name = None
+        if '#' in url:
+            url, fragment = url.split('#', 1)
+            custom_name = fragment
         
         # 解析协议
+        protocol = None
         if url.startswith("hy2://"):
-            url = url[6:]
+            url_content = url[6:]
             protocol = "hy2"
         elif url.startswith("hysteria2://"):
-            url = url[12:]
+            url_content = url[12:]
             protocol = "hysteria2"
+        elif url.startswith("hysteria://"):
+            url_content = url[11:]
+            protocol = "hysteria"
         else:
+            logger.error(f"不支持的协议: {url}")
             return None
         
         # 分离参数部分
-        if '?' in url:
-            main_part, params_str = url.split('?', 1)
+        params = {}
+        if '?' in url_content:
+            main_part, params_str = url_content.split('?', 1)
+            # 处理参数，支持/和&作为分隔符
+            params_str = params_str.replace('/', '&')
             params = dict(urllib.parse.parse_qsl(params_str))
         else:
-            main_part = url
-            params = {}
+            main_part = url_content
         
         # 解析主体部分 password@server:port
         if '@' not in main_part:
+            logger.error(f"URL格式错误，缺少@符号: {url}")
             return None
-            
+        
         auth_part, server_part = main_part.rsplit('@', 1)
         
         # 解析服务器和端口
         if ':' in server_part:
             server, port = server_part.rsplit(':', 1)
-            port = int(port)
+            try:
+                port = int(port)
+            except ValueError:
+                logger.error(f"端口格式错误: {port}")
+                return None
         else:
             server = server_part
             port = 443
         
+        # 处理insecure参数
+        insecure = False
+        if 'insecure' in params:
+            insecure_val = params.get('insecure', '0')
+            insecure = str(insecure_val) in ['1', 'true', 'True']
+        
         # 构建节点信息
         node = {
-            "name": params.get("name", f"{server}:{port}"),
+            "name": custom_name or params.get("name", f"{server}:{port}"),
             "server": server,
             "port": port,
             "password": auth_part,
             "protocol": protocol,
             "sni": params.get("sni", server),
-            "insecure": params.get("insecure", "0") == "1",
+            "insecure": insecure,
             "obfs": params.get("obfs"),
-            "obfs_password": params.get("obfs-password"),
+            "obfs_password": params.get("obfs-password") or params.get("obfs_password"),
             "alpn": params.get("alpn"),
             "bandwidth_up": params.get("up"),
             "bandwidth_down": params.get("down"),
-            "mtu": params.get("mtu", 1500)
+            "mtu": int(params.get("mtu", 1500))
         }
         
         # 清理None值
         node = {k: v for k, v in node.items() if v is not None}
         
+        logger.info(f"成功解析节点: {node['name']} ({node['server']}:{node['port']})")
         return node
+        
     except Exception as e:
-        logger.error(f"解析节点URL失败: {e}")
+        logger.error(f"解析节点URL失败: {e}, URL: {url}")
+        import traceback
+        traceback.print_exc()
         return None
 
 def generate_hysteria_config(node: Dict[str, Any]) -> str:
     """生成Hysteria2配置文件内容"""
+    
+    # 解析服务器IP（用于路由排除）
+    server_ip = get_server_ip(node["server"])
+    
     config = {
         "server": f"{node['server']}:{node['port']}",
         "auth": node["password"],
@@ -263,7 +428,7 @@ def generate_hysteria_config(node: Dict[str, Any]) -> str:
             "ipv4": ["0.0.0.0/0"],
             "ipv6": ["2000::/3"],
             "ipv4Exclude": [
-                f"{node['server']}/32",  # 排除服务器IP
+                f"{server_ip}/32",  # 使用解析后的IP地址
                 "127.0.0.0/8",
                 "10.0.0.0/8",
                 "172.16.0.0/12",
@@ -294,34 +459,217 @@ def generate_hysteria_config(node: Dict[str, Any]) -> str:
 def check_hysteria_status() -> bool:
     """检查Hysteria2服务状态"""
     try:
+        # 检查服务状态
         ret, stdout, _ = run_command(["systemctl", "is-active", "hysteria2-client"])
-        service_status["hysteria"] = "running" if stdout.strip() == "active" else "stopped"
+        is_active = stdout.strip() == "active"
+        service_status["hysteria"] = "running" if is_active else "stopped"
         
         # 检查TUN接口
         ret, stdout, _ = run_command(["ip", "link", "show", "hytun"])
         service_status["tun_interface"] = ret == 0
         
-        return service_status["hysteria"] == "running"
+        service_status["last_check"] = time.time()
+        
+        return is_active
     except Exception as e:
         logger.error(f"检查服务状态失败: {e}")
         return False
 
+def test_connection() -> Dict[str, Any]:
+    """测试连接状态"""
+    result = {
+        "status": "unknown",
+        "latency": -1,
+        "ip": "N/A",
+        "location": "N/A",
+        "dns": False,
+        "http": False
+    }
+    
+    try:
+        # 检查服务是否运行
+        if service_status.get("hysteria") != "running":
+            result["status"] = "disconnected"
+            return result
+        
+        # 测试DNS - 使用多种方法
+        dns_methods = [
+            ["nslookup", "google.com", "8.8.8.8"],
+            ["getent", "hosts", "google.com"],
+            ["host", "google.com", "8.8.8.8"]
+        ]
+        
+        for method in dns_methods:
+            try:
+                ret, _, _ = run_command(method, timeout=3)
+                if ret == 0:
+                    result["dns"] = True
+                    break
+            except:
+                continue
+        
+        # 测试HTTP连接和获取IP信息
+        try:
+            import requests
+            # 使用多个IP检测服务
+            ip_services = [
+                "https://api.ipify.org?format=json",
+                "https://ifconfig.io/ip",
+                "https://ipapi.co/ip/"
+            ]
+            
+            for service in ip_services:
+                try:
+                    response = requests.get(service, timeout=5)
+                    if response.status_code == 200:
+                        result["http"] = True
+                        if "json" in service:
+                            result["ip"] = response.json().get("ip", "N/A")
+                        else:
+                            result["ip"] = response.text.strip()
+                        break
+                except:
+                    continue
+            
+            # 获取位置信息
+            if result["ip"] != "N/A":
+                try:
+                    loc_response = requests.get(f"https://ipapi.co/{result['ip']}/country/", timeout=5)
+                    if loc_response.status_code == 200:
+                        result["location"] = loc_response.text.strip()
+                except:
+                    pass
+        except ImportError:
+            # requests模块不可用，使用curl
+            ret, stdout, _ = run_command(["curl", "-s", "-m", "5", "https://ifconfig.io/ip"])
+            if ret == 0 and stdout.strip():
+                result["http"] = True
+                result["ip"] = stdout.strip()
+                
+                ret, stdout, _ = run_command(["curl", "-s", "-m", "5", "https://ifconfig.io/country_code"])
+                if ret == 0:
+                    result["location"] = stdout.strip()
+        
+        # 如果都失败但能访问网站，也认为DNS正常
+        if not result["dns"] and result["http"]:
+            result["dns"] = True
+        
+        # 测试延迟
+        ret, stdout, _ = run_command(["ping", "-c", "1", "-W", "2", "8.8.8.8"])
+        if ret == 0:
+            import re
+            match = re.search(r'time=(\d+\.?\d*)', stdout)
+            if match:
+                result["latency"] = float(match.group(1))
+        
+        # 判断整体状态
+        tun_exists = service_status.get("tun_interface", False)
+        
+        if tun_exists and result["http"]:
+            result["status"] = "connected"
+        elif service_status["hysteria"] == "running":
+            result["status"] = "connecting"
+        else:
+            result["status"] = "disconnected"
+        
+    except Exception as e:
+        logger.error(f"连接测试失败: {e}")
+    
+    return result
+
+def get_system_stats() -> Dict[str, Any]:
+    """获取系统统计信息"""
+    try:
+        # CPU使用率
+        cpu_percent = psutil.cpu_percent(interval=1)
+        
+        # 内存使用
+        mem = psutil.virtual_memory()
+        
+        # 磁盘使用
+        disk = psutil.disk_usage('/')
+        
+        # 网络流量
+        net_io = psutil.net_io_counters()
+        
+        # 获取hysteria进程信息
+        hysteria_stats = {"cpu": 0, "memory": 0, "pid": None}
+        
+        for proc in psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_percent']):
+            try:
+                if proc.info['name'] == 'hysteria':
+                    hysteria_stats['pid'] = proc.info['pid']
+                    hysteria_stats['cpu'] = proc.info.get('cpu_percent', 0) or 0
+                    hysteria_stats['memory'] = proc.info.get('memory_percent', 0) or 0
+                    break
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                continue
+        
+        # 计算运行时间
+        uptime = 0
+        if hysteria_stats['pid']:
+            try:
+                create_time = psutil.Process(hysteria_stats['pid']).create_time()
+                uptime = int(time.time() - create_time)
+            except:
+                pass
+        
+        return {
+            "cpu": {
+                "total": cpu_percent,
+                "cores": psutil.cpu_count(),
+                "hysteria": hysteria_stats['cpu']
+            },
+            "memory": {
+                "total": mem.percent,
+                "used": mem.used // (1024 * 1024),  # MB
+                "available": mem.available // (1024 * 1024),  # MB
+                "total_gb": mem.total // (1024 * 1024 * 1024),  # GB
+                "hysteria": hysteria_stats['memory']
+            },
+            "disk": {
+                "total": disk.total // (1024 * 1024 * 1024),  # GB
+                "used": disk.used // (1024 * 1024 * 1024),  # GB
+                "free": disk.free // (1024 * 1024 * 1024),  # GB
+                "percent": disk.percent
+            },
+            "network": {
+                "bytes_sent": net_io.bytes_sent,
+                "bytes_recv": net_io.bytes_recv,
+                "packets_sent": net_io.packets_sent,
+                "packets_recv": net_io.packets_recv,
+                "errors_in": net_io.errin,
+                "errors_out": net_io.errout
+            },
+            "uptime": uptime,
+            "hysteria_running": hysteria_stats['pid'] is not None,
+            "timestamp": time.time()
+        }
+    except Exception as e:
+        logger.error(f"获取系统统计失败: {e}")
+        return {
+            "cpu": {"total": 0, "cores": 1, "hysteria": 0},
+            "memory": {"total": 0, "used": 0, "available": 0, "total_gb": 0, "hysteria": 0},
+            "disk": {"total": 0, "used": 0, "free": 0, "percent": 0},
+            "network": {"bytes_sent": 0, "bytes_recv": 0, "packets_sent": 0, "packets_recv": 0},
+            "uptime": 0,
+            "hysteria_running": False,
+            "timestamp": time.time()
+        }
+
+# ==================== Hysteria2服务控制 ====================
 def start_hysteria() -> Tuple[bool, str]:
     """启动Hysteria2服务"""
     try:
-        # 确保配置文件存在
         if not HYSTERIA_CONFIG.exists():
             return False, "配置文件不存在，请先选择节点"
         
-        # 启动服务
         ret, stdout, stderr = run_command(["systemctl", "start", "hysteria2-client"])
         if ret != 0:
             return False, f"启动失败: {stderr}"
         
-        # 等待服务启动
         time.sleep(2)
         
-        # 检查状态
         if check_hysteria_status():
             return True, "服务启动成功"
         else:
@@ -352,154 +700,6 @@ def restart_hysteria() -> Tuple[bool, str]:
     time.sleep(1)
     return start_hysteria()
 
-def test_connection() -> Dict[str, Any]:
-    """测试连接状态"""
-    result = {
-        "status": "unknown",
-        "latency": -1,
-        "ip": "N/A",
-        "location": "N/A",
-        "dns": False,
-        "http": False
-    }
-    
-    try:
-        # 测试DNS
-        ret, stdout, _ = run_command(["nslookup", "google.com"], timeout=5)
-        result["dns"] = ret == 0
-        
-        # 测试HTTP连接和获取IP信息
-        ret, stdout, _ = run_command(["curl", "-s", "-m", "5", "https://ifconfig.io/ip"])
-        if ret == 0 and stdout.strip():
-            result["http"] = True
-            result["ip"] = stdout.strip()
-            
-            # 获取位置信息
-            ret, stdout, _ = run_command(["curl", "-s", "-m", "5", "https://ifconfig.io/country_code"])
-            if ret == 0:
-                result["location"] = stdout.strip()
-        
-        # 测试延迟
-        ret, stdout, _ = run_command(["ping", "-c", "1", "-W", "2", "8.8.8.8"])
-        if ret == 0:
-            # 从ping输出中提取延迟
-            import re
-            match = re.search(r'time=(\d+\.?\d*)', stdout)
-            if match:
-                result["latency"] = float(match.group(1))
-        
-        # 判断整体状态
-        if result["dns"] and result["http"]:
-            result["status"] = "connected"
-        elif service_status["hysteria"] == "running":
-            result["status"] = "connecting"
-        else:
-            result["status"] = "disconnected"
-            
-    except Exception as e:
-        logger.error(f"连接测试失败: {e}")
-    
-    return result
-
-def get_system_stats() -> Dict[str, Any]:
-    """获取系统统计信息"""
-    try:
-        # CPU使用率
-        cpu_percent = psutil.cpu_percent(interval=1)
-        
-        # 内存使用
-        mem = psutil.virtual_memory()
-        
-        # 磁盘使用
-        disk = psutil.disk_usage('/')
-        
-        # 网络流量
-        net_io = psutil.net_io_counters()
-        
-        # 获取hysteria进程信息
-        hysteria_pid = None
-        hysteria_stats = {"cpu": 0, "memory": 0}
-        
-        for proc in psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_percent']):
-            if proc.info['name'] == 'hysteria':
-                hysteria_pid = proc.info['pid']
-                hysteria_stats['cpu'] = proc.info.get('cpu_percent', 0)
-                hysteria_stats['memory'] = proc.info.get('memory_percent', 0)
-                break
-        
-        # 计算运行时间
-        uptime = 0
-        if hysteria_pid:
-            try:
-                create_time = psutil.Process(hysteria_pid).create_time()
-                uptime = int(time.time() - create_time)
-            except:
-                pass
-        
-        return {
-            "cpu": {
-                "total": cpu_percent,
-                "hysteria": hysteria_stats['cpu']
-            },
-            "memory": {
-                "total": mem.percent,
-                "used": mem.used // (1024 * 1024),  # MB
-                "available": mem.available // (1024 * 1024),  # MB
-                "hysteria": hysteria_stats['memory']
-            },
-            "disk": {
-                "total": disk.total // (1024 * 1024 * 1024),  # GB
-                "used": disk.used // (1024 * 1024 * 1024),  # GB
-                "percent": disk.percent
-            },
-            "network": {
-                "bytes_sent": net_io.bytes_sent,
-                "bytes_recv": net_io.bytes_recv,
-                "packets_sent": net_io.packets_sent,
-                "packets_recv": net_io.packets_recv
-            },
-            "uptime": uptime,
-            "hysteria_running": hysteria_pid is not None
-        }
-    except Exception as e:
-        logger.error(f"获取系统统计失败: {e}")
-        return {}
-
-def apply_system_optimization() -> Tuple[bool, str]:
-    """应用系统优化"""
-    try:
-        optimizations = [
-            # IP转发
-            ["sysctl", "-w", "net.ipv4.ip_forward=1"],
-            ["sysctl", "-w", "net.ipv6.conf.all.forwarding=1"],
-            
-            # 反向路径过滤
-            ["sysctl", "-w", "net.ipv4.conf.default.rp_filter=2"],
-            ["sysctl", "-w", "net.ipv4.conf.all.rp_filter=2"],
-            
-            # TCP优化
-            ["sysctl", "-w", "net.core.default_qdisc=fq"],
-            ["sysctl", "-w", "net.ipv4.tcp_congestion_control=bbr"],
-            ["sysctl", "-w", "net.ipv4.tcp_fastopen=3"],
-            
-            # 缓冲区优化
-            ["sysctl", "-w", "net.core.rmem_max=16777216"],
-            ["sysctl", "-w", "net.core.wmem_max=16777216"],
-        ]
-        
-        failed = []
-        for cmd in optimizations:
-            ret, _, stderr = run_command(cmd)
-            if ret != 0:
-                failed.append(f"{' '.join(cmd)}: {stderr}")
-        
-        if failed:
-            return False, f"部分优化失败: {'; '.join(failed)}"
-        else:
-            return True, "系统优化已应用"
-    except Exception as e:
-        return False, str(e)
-
 # ==================== 监控线程 ====================
 def monitor_worker():
     """后台监控线程"""
@@ -519,38 +719,251 @@ def monitor_worker():
             if last_bytes_sent > 0:
                 stats_cache["traffic"]["up"] = net_io.bytes_sent - last_bytes_sent
                 stats_cache["traffic"]["down"] = net_io.bytes_recv - last_bytes_recv
-                stats_cache["traffic"]["total"] += stats_cache["traffic"]["up"] + stats_cache["traffic"]["down"]
+                stats_cache["traffic"]["total"] = net_io.bytes_sent + net_io.bytes_recv
             
             last_bytes_sent = net_io.bytes_sent
             last_bytes_recv = net_io.bytes_recv
             
-            # 更新连接数（简化实现）
+            # 更新CPU和内存历史
+            cpu_percent = psutil.cpu_percent()
+            mem_percent = psutil.virtual_memory().percent
+            
+            stats_cache["cpu_history"].append({"time": time.time(), "value": cpu_percent})
+            stats_cache["memory_history"].append({"time": time.time(), "value": mem_percent})
+            
+            # 保留最近100个数据点
+            if len(stats_cache["cpu_history"]) > 100:
+                stats_cache["cpu_history"] = stats_cache["cpu_history"][-100:]
+            if len(stats_cache["memory_history"]) > 100:
+                stats_cache["memory_history"] = stats_cache["memory_history"][-100:]
+            
+            # 更新连接数
             connections = len([c for c in psutil.net_connections() if c.status == 'ESTABLISHED'])
             stats_cache["connections"] = connections
             
-            # 更新时间戳
             stats_cache["last_update"] = time.time()
             
-            time.sleep(5)  # 每5秒更新一次
+            time.sleep(5)
         except Exception as e:
             logger.error(f"监控线程错误: {e}")
             time.sleep(10)
 
-# ==================== Flask路由 ====================
+def session_cleanup_worker():
+    """会话清理线程"""
+    while True:
+        try:
+            now = datetime.now().timestamp()
+            expired_sessions = []
+            
+            for session_id, session_info in users_data.get('sessions', {}).items():
+                if now > session_info.get('expires_at', 0):
+                    expired_sessions.append(session_id)
+            
+            if expired_sessions:
+                for session_id in expired_sessions:
+                    del users_data['sessions'][session_id]
+                save_users()
+                logger.info(f"清理了 {len(expired_sessions)} 个过期会话")
+            
+            time.sleep(300)  # 每5分钟清理一次
+        except Exception as e:
+            logger.error(f"会话清理线程错误: {e}")
+            time.sleep(60)
 
+# ==================== Flask路由 - 认证相关 ====================
+@app.route('/api/auth/login', methods=['POST'])
+def api_login():
+    """用户登录"""
+    try:
+        data = request.get_json()
+        username = data.get('username')
+        password = data.get('password')
+        
+        if not username or not password:
+            return jsonify({"success": False, "message": "用户名和密码不能为空"})
+        
+        # 查找用户
+        user = None
+        for u in users_data.get('users', []):
+            if u['username'] == username:
+                user = u
+                break
+        
+        if not user:
+            return jsonify({"success": False, "message": "用户名或密码错误"})
+        
+        # 检查账号状态
+        if user.get('status') != 'active':
+            return jsonify({"success": False, "message": "账号已被禁用"})
+        
+        # 检查账号锁定
+        if user.get('locked_until'):
+            locked_until = datetime.fromisoformat(user['locked_until'])
+            if datetime.now() < locked_until:
+                return jsonify({"success": False, "message": f"账号已锁定，请稍后再试"})
+            else:
+                # 解锁
+                user['locked_until'] = None
+                user['failed_attempts'] = 0
+        
+        # 验证密码
+        if not check_password_hash(user['password'], password):
+            # 记录失败次数
+            user['failed_attempts'] = user.get('failed_attempts', 0) + 1
+            
+            max_attempts = config_data.get('security', {}).get('max_login_attempts', 5)
+            if user['failed_attempts'] >= max_attempts:
+                # 锁定账号
+                lockout_duration = config_data.get('security', {}).get('lockout_duration', 300)
+                user['locked_until'] = (datetime.now() + timedelta(seconds=lockout_duration)).isoformat()
+                save_users()
+                return jsonify({"success": False, "message": f"登录失败次数过多，账号已锁定{lockout_duration}秒"})
+            
+            save_users()
+            return jsonify({"success": False, "message": "用户名或密码错误"})
+        
+        # 登录成功
+        user['failed_attempts'] = 0
+        user['last_login'] = datetime.now().isoformat()
+        
+        # 创建会话
+        session_id = secrets.token_hex(32)
+        session_timeout = config_data.get('auth', {}).get('session_timeout', 3600)
+        
+        users_data['sessions'][session_id] = {
+            'user_id': user['id'],
+            'username': username,
+            'created_at': datetime.now().isoformat(),
+            'expires_at': (datetime.now() + timedelta(seconds=session_timeout)).timestamp(),
+            'ip': request.remote_addr,
+            'user_agent': request.headers.get('User-Agent'),
+            'last_activity': datetime.now().isoformat()
+        }
+        
+        save_users()
+        
+        # 设置会话
+        session['user_id'] = user['id']
+        session['username'] = username
+        session['session_id'] = session_id
+        session.permanent = True
+        app.permanent_session_lifetime = timedelta(seconds=session_timeout)
+        
+        logger.info(f"用户 {username} 登录成功，IP: {request.remote_addr}")
+        
+        return jsonify({
+            "success": True,
+            "message": "登录成功",
+            "data": {
+                "username": username,
+                "role": user.get('role', 'user'),
+                "session_id": session_id,
+                "expires_in": session_timeout
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"登录失败: {e}")
+        return jsonify({"success": False, "message": "登录失败"})
+
+@app.route('/api/auth/logout', methods=['POST'])
+@login_required
+def api_logout():
+    """用户登出"""
+    try:
+        session_id = session.get('session_id')
+        if session_id and session_id in users_data.get('sessions', {}):
+            del users_data['sessions'][session_id]
+            save_users()
+        
+        username = session.get('username', 'unknown')
+        session.clear()
+        
+        logger.info(f"用户 {username} 登出")
+        
+        return jsonify({"success": True, "message": "登出成功"})
+    except Exception as e:
+        logger.error(f"登出失败: {e}")
+        return jsonify({"success": False, "message": "登出失败"})
+
+@app.route('/api/auth/status')
+def api_auth_status():
+    """获取认证状态"""
+    if 'user_id' in session:
+        return jsonify({
+            "success": True,
+            "authenticated": True,
+            "data": {
+                "username": session.get('username'),
+                "user_id": session.get('user_id')
+            }
+        })
+    else:
+        return jsonify({
+            "success": True,
+            "authenticated": False
+        })
+
+@app.route('/api/auth/change_password', methods=['POST'])
+@login_required
+def api_change_password():
+    """修改密码"""
+    try:
+        data = request.get_json()
+        old_password = data.get('old_password')
+        new_password = data.get('new_password')
+        
+        if not old_password or not new_password:
+            return jsonify({"success": False, "message": "密码不能为空"})
+        
+        if len(new_password) < 6:
+            return jsonify({"success": False, "message": "新密码至少6个字符"})
+        
+        user_id = session.get('user_id')
+        user = next((u for u in users_data.get('users', []) if u['id'] == user_id), None)
+        
+        if not user:
+            return jsonify({"success": False, "message": "用户不存在"})
+        
+        # 验证旧密码
+        if not check_password_hash(user['password'], old_password):
+            return jsonify({"success": False, "message": "原密码错误"})
+        
+        # 更新密码
+        user['password'] = generate_password_hash(new_password)
+        user['password_changed_at'] = datetime.now().isoformat()
+        save_users()
+        
+        logger.info(f"用户 {user['username']} 修改了密码")
+        
+        return jsonify({"success": True, "message": "密码修改成功"})
+        
+    except Exception as e:
+        logger.error(f"修改密码失败: {e}")
+        return jsonify({"success": False, "message": "修改密码失败"})
+
+# ==================== Flask路由 - 主要功能 ====================
 @app.route('/')
 def index():
-    """主页 - 返回WebUI"""
+    """主页"""
     return send_from_directory(STATIC_DIR, 'dashboard.html')
 
 @app.route('/api/status')
+@login_required
 def api_status():
     """获取服务状态"""
     return jsonify({
         "success": True,
         "data": {
             "service": service_status,
-            "connection": test_connection() if service_status["hysteria"] == "running" else {},
+            "connection": test_connection() if service_status["hysteria"] == "running" else {
+                "status": "disconnected",
+                "ip": "N/A",
+                "location": "N/A",
+                "latency": -1,
+                "dns": False,
+                "http": False
+            },
             "stats": stats_cache,
             "current_node": nodes_data.get("current"),
             "version": VERSION
@@ -558,6 +971,7 @@ def api_status():
     })
 
 @app.route('/api/nodes', methods=['GET'])
+@login_required
 def api_get_nodes():
     """获取节点列表"""
     return jsonify({
@@ -566,6 +980,7 @@ def api_get_nodes():
     })
 
 @app.route('/api/nodes', methods=['POST'])
+@login_required
 def api_add_node():
     """添加节点"""
     try:
@@ -590,10 +1005,14 @@ def api_add_node():
         # 生成唯一ID
         node["id"] = hashlib.md5(f"{node['server']}:{node['port']}:{time.time()}".encode()).hexdigest()[:8]
         node["created_at"] = datetime.now().isoformat()
+        node["last_used"] = None
+        node["group"] = data.get("group", "default")
         
         # 添加到节点列表
         nodes_data["nodes"].append(node)
         save_nodes()
+        
+        logger.info(f"添加节点: {node['name']} ({node['server']}:{node['port']})")
         
         return jsonify({"success": True, "message": "节点添加成功", "data": node})
     except Exception as e:
@@ -601,9 +1020,16 @@ def api_add_node():
         return jsonify({"success": False, "message": str(e)})
 
 @app.route('/api/nodes/<node_id>', methods=['DELETE'])
+@login_required
 def api_delete_node(node_id):
     """删除节点"""
     try:
+        node_name = None
+        for node in nodes_data["nodes"]:
+            if node.get("id") == node_id:
+                node_name = node.get("name", "未知")
+                break
+        
         nodes_data["nodes"] = [n for n in nodes_data["nodes"] if n.get("id") != node_id]
         
         # 如果删除的是当前节点
@@ -612,37 +1038,15 @@ def api_delete_node(node_id):
             stop_hysteria()
         
         save_nodes()
+        
+        logger.info(f"删除节点: {node_name}")
+        
         return jsonify({"success": True, "message": "节点已删除"})
     except Exception as e:
         return jsonify({"success": False, "message": str(e)})
 
-@app.route('/api/nodes/<node_id>', methods=['PUT'])
-def api_update_node(node_id):
-    """更新节点"""
-    try:
-        data = request.get_json()
-        
-        for node in nodes_data["nodes"]:
-            if node.get("id") == node_id:
-                node.update(data)
-                save_nodes()
-                
-                # 如果是当前节点，重新生成配置
-                if nodes_data.get("current") == node_id:
-                    config_content = generate_hysteria_config(node)
-                    with open(HYSTERIA_CONFIG, 'w') as f:
-                        f.write(config_content)
-                    
-                    if service_status["hysteria"] == "running":
-                        restart_hysteria()
-                
-                return jsonify({"success": True, "message": "节点更新成功"})
-        
-        return jsonify({"success": False, "message": "节点不存在"})
-    except Exception as e:
-        return jsonify({"success": False, "message": str(e)})
-
 @app.route('/api/nodes/<node_id>/use', methods=['POST'])
+@login_required
 def api_use_node(node_id):
     """使用指定节点"""
     try:
@@ -663,10 +1067,13 @@ def api_use_node(node_id):
         
         # 更新当前节点
         nodes_data["current"] = node_id
+        node["last_used"] = datetime.now().isoformat()
         save_nodes()
         
         # 重启服务
         success, message = restart_hysteria()
+        
+        logger.info(f"切换到节点: {node['name']} ({node['server']}:{node['port']})")
         
         return jsonify({
             "success": success,
@@ -674,9 +1081,11 @@ def api_use_node(node_id):
             "data": {"current_node": node}
         })
     except Exception as e:
+        logger.error(f"使用节点失败: {e}")
         return jsonify({"success": False, "message": str(e)})
 
 @app.route('/api/service/<action>', methods=['POST'])
+@login_required
 def api_service_control(action):
     """服务控制"""
     try:
@@ -689,11 +1098,14 @@ def api_service_control(action):
         else:
             return jsonify({"success": False, "message": "无效的操作"})
         
+        logger.info(f"服务控制: {action} - {message}")
+        
         return jsonify({"success": success, "message": message})
     except Exception as e:
         return jsonify({"success": False, "message": str(e)})
 
 @app.route('/api/test')
+@login_required
 def api_test_connection():
     """测试连接"""
     return jsonify({
@@ -702,191 +1114,115 @@ def api_test_connection():
     })
 
 @app.route('/api/logs')
+@login_required
 def api_get_logs():
     """获取日志"""
     try:
         lines = int(request.args.get('lines', 100))
+        log_type = request.args.get('type', 'all')
         
         logs = {
             "hysteria": [],
             "manager": []
         }
         
-        # 读取Hysteria日志
-        hysteria_log = LOG_DIR / "hysteria.log"
-        if hysteria_log.exists():
-            ret, stdout, _ = run_command(["tail", f"-n{lines}", str(hysteria_log)])
-            if ret == 0:
-                logs["hysteria"] = stdout.split('\n')
+        if log_type in ['hysteria', 'all']:
+            # Hysteria客户端日志
+            ret, stdout, _ = run_command(["journalctl", "-u", "hysteria2-client", "-n", str(lines), "--no-pager"])
+            if ret == 0 and stdout:
+                logs["hysteria"] = [line for line in stdout.split('\n') if line.strip()]
+            
+            # 备用：读取日志文件
+            if not logs["hysteria"]:
+                hysteria_log = LOG_DIR / "hysteria.log"
+                if hysteria_log.exists():
+                    try:
+                        with open(hysteria_log, 'r', encoding='utf-8', errors='ignore') as f:
+                            all_lines = f.readlines()
+                            logs["hysteria"] = [line.strip() for line in all_lines[-lines:] if line.strip()]
+                    except:
+                        pass
         
-        # 读取管理器日志
-        manager_log = LOG_DIR / "manager.log"
-        if manager_log.exists():
-            ret, stdout, _ = run_command(["tail", f"-n{lines}", str(manager_log)])
-            if ret == 0:
-                logs["manager"] = stdout.split('\n')
+        if log_type in ['manager', 'all']:
+            # 管理器日志
+            ret, stdout, _ = run_command(["journalctl", "-u", "hysteria2-manager", "-n", str(lines), "--no-pager"])
+            if ret == 0 and stdout:
+                logs["manager"] = [line for line in stdout.split('\n') if line.strip()]
+            
+            # 备用：读取日志文件
+            if not logs["manager"]:
+                manager_log = LOG_DIR / "manager.log"
+                if manager_log.exists():
+                    try:
+                        with open(manager_log, 'r', encoding='utf-8', errors='ignore') as f:
+                            all_lines = f.readlines()
+                            logs["manager"] = [line.strip() for line in all_lines[-lines:] if line.strip()]
+                    except:
+                        pass
         
         return jsonify({"success": True, "data": logs})
     except Exception as e:
-        return jsonify({"success": False, "message": str(e)})
+        logger.error(f"获取日志失败: {e}")
+        return jsonify({"success": False, "message": str(e), "data": {"hysteria": [], "manager": []}})
 
 @app.route('/api/system/stats')
+@login_required
 def api_system_stats():
     """获取系统统计"""
-    return jsonify({
-        "success": True,
-        "data": get_system_stats()
-    })
-
-@app.route('/api/system/optimize', methods=['POST'])
-def api_system_optimize():
-    """应用系统优化"""
-    success, message = apply_system_optimization()
-    return jsonify({"success": success, "message": message})
+    try:
+        stats = get_system_stats()
+        return jsonify({
+            "success": True,
+            "data": stats
+        })
+    except Exception as e:
+        logger.error(f"获取系统统计失败: {e}")
+        return jsonify({
+            "success": True,
+            "data": get_system_stats()  # 返回默认值
+        })
 
 @app.route('/api/config', methods=['GET'])
+@login_required
 def api_get_config():
     """获取配置"""
+    # 过滤敏感信息
+    safe_config = config_data.copy()
+    if 'secret_key' in safe_config:
+        del safe_config['secret_key']
+    if 'auth' in safe_config and 'password' in safe_config['auth']:
+        safe_config['auth']['password'] = '******'
+    
     return jsonify({
         "success": True,
-        "data": config_data
+        "data": safe_config
     })
 
 @app.route('/api/config', methods=['POST'])
+@admin_required
 def api_update_config():
     """更新配置"""
     try:
         data = request.get_json()
-        config_data.update(data)
+        
+        # 不允许直接修改某些敏感字段
+        protected_fields = ['secret_key', 'version']
+        for field in protected_fields:
+            if field in data:
+                del data[field]
+        
+        # 更新配置
+        for key, value in data.items():
+            if key in config_data:
+                config_data[key] = value
+        
         save_config()
+        
+        logger.info(f"配置已更新")
+        
         return jsonify({"success": True, "message": "配置已更新"})
     except Exception as e:
-        return jsonify({"success": False, "message": str(e)})
-
-@app.route('/api/subscription', methods=['POST'])
-def api_add_subscription():
-    """添加订阅"""
-    try:
-        data = request.get_json()
-        url = data.get("url")
-        
-        if not url:
-            return jsonify({"success": False, "message": "订阅地址不能为空"})
-        
-        # 下载订阅内容
-        import requests
-        response = requests.get(url, timeout=10)
-        content = response.text
-        
-        # 解析节点
-        added = 0
-        for line in content.split('\n'):
-            line = line.strip()
-            if line.startswith(('hy2://', 'hysteria2://')):
-                node = parse_hysteria2_url(line)
-                if node:
-                    node["id"] = hashlib.md5(f"{node['server']}:{node['port']}:{time.time()}".encode()).hexdigest()[:8]
-                    node["created_at"] = datetime.now().isoformat()
-                    node["source"] = "subscription"
-                    nodes_data["nodes"].append(node)
-                    added += 1
-        
-        # 保存订阅信息
-        nodes_data["subscriptions"].append({
-            "url": url,
-            "name": data.get("name", "未命名订阅"),
-            "updated_at": datetime.now().isoformat(),
-            "nodes_count": added
-        })
-        
-        save_nodes()
-        
-        return jsonify({
-            "success": True,
-            "message": f"成功导入 {added} 个节点"
-        })
-    except Exception as e:
-        return jsonify({"success": False, "message": str(e)})
-
-@app.route('/api/export/config')
-def api_export_config():
-    """导出配置"""
-    try:
-        export_data = {
-            "version": VERSION,
-            "exported_at": datetime.now().isoformat(),
-            "config": config_data,
-            "nodes": nodes_data
-        }
-        
-        return jsonify({
-            "success": True,
-            "data": base64.b64encode(json.dumps(export_data).encode()).decode()
-        })
-    except Exception as e:
-        return jsonify({"success": False, "message": str(e)})
-
-@app.route('/api/import/config', methods=['POST'])
-def api_import_config():
-    """导入配置"""
-    try:
-        data = request.get_json()
-        encoded = data.get("data")
-        
-        if not encoded:
-            return jsonify({"success": False, "message": "无效的导入数据"})
-        
-        # 解码
-        import_data = json.loads(base64.b64decode(encoded))
-        
-        # 合并配置
-        if "config" in import_data:
-            config_data.update(import_data["config"])
-            save_config()
-        
-        # 合并节点
-        if "nodes" in import_data:
-            existing_servers = {(n["server"], n["port"]) for n in nodes_data["nodes"]}
-            
-            for node in import_data["nodes"].get("nodes", []):
-                if (node["server"], node["port"]) not in existing_servers:
-                    nodes_data["nodes"].append(node)
-            
-            save_nodes()
-        
-        return jsonify({"success": True, "message": "配置导入成功"})
-    except Exception as e:
-        return jsonify({"success": False, "message": str(e)})
-
-@app.route('/api/check_update')
-def api_check_update():
-    """检查更新"""
-    try:
-        import requests
-        
-        # 检查GitHub最新版本
-        response = requests.get(
-            f"https://api.github.com/repos/{config_data.get('github_repo', '1439616687/hysteria2-manager')}/releases/latest",
-            timeout=10
-        )
-        
-        if response.status_code == 200:
-            latest = response.json()
-            latest_version = latest.get("tag_name", "").lstrip("v")
-            
-            return jsonify({
-                "success": True,
-                "data": {
-                    "current_version": VERSION,
-                    "latest_version": latest_version,
-                    "update_available": latest_version > VERSION,
-                    "release_notes": latest.get("body", ""),
-                    "download_url": latest.get("html_url", "")
-                }
-            })
-        else:
-            return jsonify({"success": False, "message": "无法获取更新信息"})
-    except Exception as e:
+        logger.error(f"更新配置失败: {e}")
         return jsonify({"success": False, "message": str(e)})
 
 # ==================== 信号处理 ====================
@@ -898,18 +1234,22 @@ def signal_handler(sig, frame):
 # ==================== 主函数 ====================
 def main():
     """主函数"""
-    # 加载配置
+    # 加载数据
     load_config()
     load_nodes()
+    load_users()
     
     # 注册信号处理
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
     
     # 启动监控线程
-    global monitor_thread
+    global monitor_thread, session_cleanup_thread
     monitor_thread = threading.Thread(target=monitor_worker, daemon=True)
     monitor_thread.start()
+    
+    session_cleanup_thread = threading.Thread(target=session_cleanup_worker, daemon=True)
+    session_cleanup_thread.start()
     
     # 检查服务状态
     check_hysteria_status()
@@ -920,6 +1260,7 @@ def main():
     
     logger.info(f"Hysteria2 Manager v{VERSION} 启动中...")
     logger.info(f"WebUI地址: http://{host}:{port}")
+    logger.info(f"认证状态: {'启用' if config_data.get('auth', {}).get('enabled', True) else '禁用'}")
     
     app.run(
         host=host,
