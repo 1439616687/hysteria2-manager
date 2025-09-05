@@ -3,71 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hysteria2 Manager - Web控制面板</title>
-    
-    <!-- 图标 -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='50%' x='50%' text-anchor='middle' font-size='60'>🚀</text></svg>">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Hysteria2 Manager - Advanced Proxy Management System</title>
     
     <!-- Vue.js 3 -->
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    
-    <!-- Axios for HTTP requests -->
-    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
-    
-    <!-- Chart.js for statistics -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/vue@3.3.4/dist/vue.global.js"></script>
+    <!-- Axios -->
+    <script src="https://unpkg.com/axios@1.5.0/dist/axios.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     
     <style>
-        /* ==================== 全局样式 ==================== */
+        /* ==================== 全局变量 ==================== */
         :root {
-            --primary-color: #4a90e2;
-            --primary-hover: #357abd;
-            --success-color: #52c41a;
-            --warning-color: #faad14;
-            --danger-color: #f5222d;
-            --info-color: #1890ff;
+            /* 科技蓝主题色 */
+            --primary-color: #00a6fb;
+            --primary-dark: #0081c9;
+            --primary-light: #5eb8ff;
+            --primary-alpha: rgba(0, 166, 251, 0.1);
             
-            --bg-primary: #ffffff;
-            --bg-secondary: #f5f5f5;
-            --bg-tertiary: #fafafa;
-            --bg-card: #ffffff;
+            /* 状态颜色 */
+            --success-color: #00d68f;
+            --warning-color: #ffaa00;
+            --danger-color: #ff3d71;
+            --info-color: #0095ff;
             
-            --text-primary: #1a1a1a;
-            --text-secondary: #666666;
-            --text-tertiary: #999999;
+            /* 背景色 */
+            --bg-primary: #0a0e27;
+            --bg-secondary: #151932;
+            --bg-card: #1e2139;
+            --bg-hover: #262a45;
             
-            --border-color: #e8e8e8;
-            --shadow-sm: 0 2px 4px rgba(0,0,0,0.08);
-            --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
-            --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+            /* 文字颜色 */
+            --text-primary: #ffffff;
+            --text-secondary: #8f9bb3;
+            --text-disabled: #4b5178;
             
-            --radius-sm: 4px;
-            --radius-md: 8px;
-            --radius-lg: 12px;
+            /* 边框和阴影 */
+            --border-color: #2e3350;
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
             
-            --transition: all 0.3s ease;
+            /* 动画 */
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
-        /* 深色模式 */
-        [data-theme="dark"] {
-            --primary-color: #4a90e2;
-            --primary-hover: #5ba0f2;
-            
-            --bg-primary: #1a1a1a;
-            --bg-secondary: #2a2a2a;
-            --bg-tertiary: #333333;
-            --bg-card: #2a2a2a;
-            
-            --text-primary: #e8e8e8;
-            --text-secondary: #aaaaaa;
-            --text-tertiary: #777777;
-            
-            --border-color: #404040;
-            --shadow-sm: 0 2px 4px rgba(0,0,0,0.2);
-            --shadow-md: 0 4px 12px rgba(0,0,0,0.3);
-            --shadow-lg: 0 8px 24px rgba(0,0,0,0.4);
-        }
-        
+        /* ==================== 基础样式 ==================== */
         * {
             margin: 0;
             padding: 0;
@@ -75,15 +58,236 @@
         }
         
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
             background: var(--bg-primary);
             color: var(--text-primary);
-            transition: var(--transition);
+            line-height: 1.6;
             overflow-x: hidden;
         }
         
-        /* ==================== 布局 ==================== */
-        #app {
+        /* 滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-dark);
+        }
+        
+        /* ==================== SVG图标定义 ==================== */
+        .icon {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+            vertical-align: middle;
+        }
+        
+        .icon-lg {
+            width: 24px;
+            height: 24px;
+        }
+        
+        .icon-xl {
+            width: 32px;
+            height: 32px;
+        }
+        
+        /* ==================== 登录页面 ==================== */
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .login-bg-pattern {
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            top: -50%;
+            left: -50%;
+            background-image: 
+                radial-gradient(circle at 20% 50%, var(--primary-alpha) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, var(--primary-alpha) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, var(--primary-alpha) 0%, transparent 50%);
+            animation: float 20s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(-20px, -20px) rotate(1deg); }
+            66% { transform: translate(20px, -10px) rotate(-1deg); }
+        }
+        
+        .login-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 48px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            z-index: 10;
+        }
+        
+        .login-logo {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .login-logo svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 16px;
+        }
+        
+        .login-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+            text-align: center;
+            margin-bottom: 8px;
+        }
+        
+        .login-subtitle {
+            font-size: 14px;
+            color: var(--text-secondary);
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        
+        /* ==================== 表单样式 ==================== */
+        .form-group {
+            margin-bottom: 24px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 14px;
+            color: var(--text-primary);
+            transition: var(--transition);
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px var(--primary-alpha);
+        }
+        
+        .form-input::placeholder {
+            color: var(--text-disabled);
+        }
+        
+        .form-error {
+            color: var(--danger-color);
+            font-size: 12px;
+            margin-top: 4px;
+        }
+        
+        /* ==================== 按钮样式 ==================== */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            gap: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        .btn:active::before {
+            width: 300px;
+            height: 300px;
+        }
+        
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 166, 251, 0.4);
+        }
+        
+        .btn-secondary {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+        
+        .btn-secondary:hover {
+            background: var(--bg-hover);
+        }
+        
+        .btn-success {
+            background: var(--success-color);
+            color: white;
+        }
+        
+        .btn-danger {
+            background: var(--danger-color);
+            color: white;
+        }
+        
+        .btn-block {
+            width: 100%;
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        /* ==================== 主界面布局 ==================== */
+        .app-container {
             display: flex;
             min-height: 100vh;
         }
@@ -99,7 +303,7 @@
         }
         
         .sidebar.collapsed {
-            width: 60px;
+            width: 64px;
         }
         
         .sidebar-header {
@@ -110,26 +314,32 @@
             justify-content: space-between;
         }
         
-        .logo {
+        .sidebar-logo {
             display: flex;
             align-items: center;
             gap: 12px;
-            font-size: 20px;
-            font-weight: 600;
+        }
+        
+        .sidebar-logo-icon {
+            width: 32px;
+            height: 32px;
+            flex-shrink: 0;
+        }
+        
+        .sidebar-logo-text {
+            font-size: 18px;
+            font-weight: 700;
             color: var(--primary-color);
+            white-space: nowrap;
         }
         
-        .logo-icon {
-            font-size: 28px;
-        }
-        
-        .sidebar.collapsed .logo-text {
+        .sidebar.collapsed .sidebar-logo-text {
             display: none;
         }
         
         .nav-menu {
             flex: 1;
-            padding: 20px 0;
+            padding: 16px 0;
         }
         
         .nav-item {
@@ -141,39 +351,54 @@
             transition: var(--transition);
             cursor: pointer;
             position: relative;
+            margin: 4px 8px;
+            border-radius: 8px;
         }
         
         .nav-item:hover {
-            background: var(--bg-tertiary);
+            background: var(--bg-hover);
             color: var(--primary-color);
         }
         
         .nav-item.active {
-            background: var(--bg-tertiary);
+            background: var(--primary-alpha);
             color: var(--primary-color);
         }
         
         .nav-item.active::before {
-            content: "";
+            content: '';
             position: absolute;
             left: 0;
-            top: 0;
-            bottom: 0;
+            top: 50%;
+            transform: translateY(-50%);
             width: 3px;
+            height: 24px;
             background: var(--primary-color);
+            border-radius: 0 3px 3px 0;
         }
         
         .nav-icon {
-            width: 24px;
-            height: 24px;
+            width: 20px;
+            height: 20px;
             margin-right: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .nav-text {
+            white-space: nowrap;
         }
         
         .sidebar.collapsed .nav-text {
             display: none;
+        }
+        
+        .sidebar.collapsed .nav-item {
+            justify-content: center;
+            padding: 12px;
+        }
+        
+        .sidebar.collapsed .nav-icon {
+            margin-right: 0;
         }
         
         /* 主内容区 */
@@ -181,18 +406,18 @@
             flex: 1;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
+            background: var(--bg-primary);
         }
         
         /* 顶部栏 */
         .topbar {
-            height: 60px;
+            height: 64px;
             background: var(--bg-card);
             border-bottom: 1px solid var(--border-color);
-            padding: 0 24px;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            padding: 0 24px;
         }
         
         .topbar-left {
@@ -202,29 +427,93 @@
         }
         
         .menu-toggle {
-            width: 32px;
-            height: 32px;
+            width: 40px;
+            height: 40px;
             display: flex;
             align-items: center;
             justify-content: center;
+            border-radius: 8px;
             cursor: pointer;
-            border-radius: var(--radius-sm);
             transition: var(--transition);
         }
         
         .menu-toggle:hover {
-            background: var(--bg-secondary);
+            background: var(--bg-hover);
         }
         
         .page-title {
             font-size: 20px;
-            font-weight: 500;
+            font-weight: 600;
+            color: var(--text-primary);
         }
         
         .topbar-right {
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 12px;
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--bg-secondary);
+            border-radius: 20px;
+            font-size: 13px;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-dot.connected {
+            background: var(--success-color);
+        }
+        
+        .status-dot.connecting {
+            background: var(--warning-color);
+        }
+        
+        .status-dot.disconnected {
+            background: var(--danger-color);
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .user-menu:hover {
+            background: var(--bg-hover);
+        }
+        
+        .user-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: white;
         }
         
         /* 内容区域 */
@@ -234,257 +523,215 @@
             overflow-y: auto;
         }
         
-        /* ==================== 组件样式 ==================== */
-        
-        /* 卡片 */
+        /* ==================== 卡片组件 ==================== */
         .card {
             background: var(--bg-card);
-            border-radius: var(--radius-lg);
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
             transition: var(--transition);
-        }
-        
-        .card:hover {
-            box-shadow: var(--shadow-md);
         }
         
         .card-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 16px;
+            margin-bottom: 20px;
         }
         
         .card-title {
-            font-size: 16px;
-            font-weight: 500;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
         }
         
-        /* 状态卡片 */
+        .card-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        /* ==================== 统计卡片 ==================== */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
             gap: 20px;
             margin-bottom: 24px;
         }
         
         .stat-card {
             background: var(--bg-card);
-            border-radius: var(--radius-lg);
-            padding: 20px;
-            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            position: relative;
+            overflow: hidden;
             transition: var(--transition);
         }
         
         .stat-card:hover {
-            transform: translateY(-2px);
+            transform: translateY(-4px);
             box-shadow: var(--shadow-md);
         }
         
-        .stat-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 12px;
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary-color), var(--primary-light));
         }
         
         .stat-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: var(--radius-md);
+            width: 48px;
+            height: 48px;
+            background: var(--primary-alpha);
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
+            margin-bottom: 16px;
         }
         
-        .stat-icon.success {
-            background: rgba(82, 196, 26, 0.1);
-            color: var(--success-color);
-        }
-        
-        .stat-icon.warning {
-            background: rgba(250, 173, 20, 0.1);
-            color: var(--warning-color);
-        }
-        
-        .stat-icon.danger {
-            background: rgba(245, 34, 45, 0.1);
-            color: var(--danger-color);
-        }
-        
-        .stat-icon.info {
-            background: rgba(24, 144, 255, 0.1);
-            color: var(--info-color);
+        .stat-icon svg {
+            width: 24px;
+            height: 24px;
+            color: var(--primary-color);
         }
         
         .stat-value {
-            font-size: 24px;
-            font-weight: 600;
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
             margin-bottom: 4px;
         }
         
         .stat-label {
+            font-size: 13px;
             color: var(--text-secondary);
-            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         
-        /* 按钮 */
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 8px 16px;
-            border: none;
-            border-radius: var(--radius-sm);
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: var(--transition);
-            gap: 6px;
-        }
-        
-        .btn-primary {
-            background: var(--primary-color);
-            color: white;
-        }
-        
-        .btn-primary:hover {
-            background: var(--primary-hover);
-        }
-        
-        .btn-success {
+        .stat-change {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 4px;
             background: var(--success-color);
             color: white;
         }
         
-        .btn-danger {
+        .stat-change.down {
             background: var(--danger-color);
-            color: white;
         }
         
-        .btn-default {
-            background: var(--bg-secondary);
-            color: var(--text-primary);
+        /* ==================== 表格样式 ==================== */
+        .table-container {
+            overflow-x: auto;
         }
         
-        .btn-default:hover {
-            background: var(--bg-tertiary);
-        }
-        
-        .btn-sm {
-            padding: 6px 12px;
-            font-size: 13px;
-        }
-        
-        .btn-lg {
-            padding: 12px 24px;
-            font-size: 16px;
-        }
-        
-        .btn-block {
-            width: 100%;
-        }
-        
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        
-        /* 输入框 */
-        .form-group {
-            margin-bottom: 16px;
-        }
-        
-        .form-label {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 14px;
-            font-weight: 500;
-            color: var(--text-secondary);
-        }
-        
-        .form-input,
-        .form-select,
-        .form-textarea {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-sm);
-            font-size: 14px;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            transition: var(--transition);
-        }
-        
-        .form-input:focus,
-        .form-select:focus,
-        .form-textarea:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.1);
-        }
-        
-        .form-textarea {
-            resize: vertical;
-            min-height: 100px;
-        }
-        
-        /* 表格 */
         .table {
             width: 100%;
-            border-collapse: collapse;
+            border-collapse: separate;
+            border-spacing: 0;
         }
         
         .table th {
+            background: var(--bg-secondary);
+            padding: 12px 16px;
             text-align: left;
-            padding: 12px;
-            font-weight: 500;
+            font-weight: 600;
+            font-size: 13px;
             color: var(--text-secondary);
-            border-bottom: 2px solid var(--border-color);
-        }
-        
-        .table td {
-            padding: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
             border-bottom: 1px solid var(--border-color);
         }
         
-        .table tr:hover {
+        .table th:first-child {
+            border-top-left-radius: 8px;
+        }
+        
+        .table th:last-child {
+            border-top-right-radius: 8px;
+        }
+        
+        .table td {
+            padding: 16px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 14px;
+        }
+        
+        .table tr:hover td {
+            background: var(--bg-hover);
+        }
+        
+        /* ==================== 节点列表 ==================== */
+        .node-list {
+            display: grid;
+            gap: 16px;
+        }
+        
+        .node-item {
             background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: var(--transition);
+            position: relative;
         }
         
-        /* 标签 */
-        .badge {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: var(--radius-sm);
-            font-size: 12px;
-            font-weight: 500;
+        .node-item:hover {
+            background: var(--bg-hover);
+            border-color: var(--primary-color);
         }
         
-        .badge-success {
-            background: rgba(82, 196, 26, 0.1);
-            color: var(--success-color);
+        .node-item.active {
+            background: var(--primary-alpha);
+            border-color: var(--primary-color);
         }
         
-        .badge-warning {
-            background: rgba(250, 173, 20, 0.1);
-            color: var(--warning-color);
+        .node-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: var(--primary-color);
+            border-radius: 0 4px 4px 0;
         }
         
-        .badge-danger {
-            background: rgba(245, 34, 45, 0.1);
-            color: var(--danger-color);
+        .node-info {
+            flex: 1;
         }
         
-        .badge-info {
-            background: rgba(24, 144, 255, 0.1);
-            color: var(--info-color);
+        .node-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
         }
         
-        /* 模态框 */
+        .node-details {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        
+        .node-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        /* ==================== 模态框 ==================== */
         .modal {
             display: none;
             position: fixed;
@@ -492,39 +739,44 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(4px);
             z-index: 1000;
             align-items: center;
             justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s;
         }
         
         .modal.show {
             display: flex;
+            opacity: 1;
         }
         
         .modal-content {
             background: var(--bg-card);
-            border-radius: var(--radius-lg);
-            max-width: 500px;
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
             width: 90%;
+            max-width: 560px;
             max-height: 90vh;
-            overflow-y: auto;
-            animation: modalSlideIn 0.3s ease;
+            overflow: hidden;
+            animation: modalSlideIn 0.3s ease-out;
         }
         
         @keyframes modalSlideIn {
             from {
-                transform: translateY(-20px);
+                transform: translateY(-20px) scale(0.95);
                 opacity: 0;
             }
             to {
-                transform: translateY(0);
+                transform: translateY(0) scale(1);
                 opacity: 1;
             }
         }
         
         .modal-header {
-            padding: 20px;
+            padding: 24px;
             border-bottom: 1px solid var(--border-color);
             display: flex;
             align-items: center;
@@ -532,8 +784,9 @@
         }
         
         .modal-title {
-            font-size: 18px;
-            font-weight: 500;
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
         }
         
         .modal-close {
@@ -542,65 +795,97 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            border-radius: 8px;
             cursor: pointer;
-            border-radius: var(--radius-sm);
             transition: var(--transition);
         }
         
         .modal-close:hover {
-            background: var(--bg-secondary);
+            background: var(--bg-hover);
         }
         
         .modal-body {
-            padding: 20px;
+            padding: 24px;
+            max-height: 60vh;
+            overflow-y: auto;
         }
         
         .modal-footer {
-            padding: 20px;
+            padding: 24px;
             border-top: 1px solid var(--border-color);
             display: flex;
             justify-content: flex-end;
             gap: 12px;
         }
         
-        /* 加载动画 */
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid var(--border-color);
-            border-top-color: var(--primary-color);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
+        /* ==================== 标签页 ==================== */
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 24px;
         }
         
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
+        .tab-item {
+            padding: 12px 24px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: var(--transition);
+            position: relative;
         }
         
-        .loading-overlay {
+        .tab-item:hover {
+            color: var(--primary-color);
+        }
+        
+        .tab-item.active {
+            color: var(--primary-color);
+        }
+        
+        .tab-item.active::after {
+            content: '';
             position: absolute;
-            top: 0;
+            bottom: -1px;
             left: 0;
             right: 0;
-            bottom: 0;
-            background: rgba(255, 255, 255, 0.9);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 100;
+            height: 2px;
+            background: var(--primary-color);
         }
         
-        [data-theme="dark"] .loading-overlay {
-            background: rgba(0, 0, 0, 0.9);
+        /* ==================== 日志查看器 ==================== */
+        .log-viewer {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            max-height: 500px;
+            overflow-y: auto;
         }
         
-        /* 开关 */
+        .log-line {
+            margin-bottom: 4px;
+            padding: 2px 0;
+        }
+        
+        .log-line.error {
+            color: var(--danger-color);
+        }
+        
+        .log-line.warn {
+            color: var(--warning-color);
+        }
+        
+        .log-line.info {
+            color: var(--info-color);
+        }
+        
+        /* ==================== 开关组件 ==================== */
         .switch {
             position: relative;
             display: inline-block;
-            width: 44px;
+            width: 48px;
             height: 24px;
         }
         
@@ -617,7 +902,8 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: var(--border-color);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
             transition: var(--transition);
             border-radius: 24px;
         }
@@ -628,133 +914,137 @@
             height: 18px;
             width: 18px;
             left: 3px;
-            bottom: 3px;
-            background: white;
+            bottom: 2px;
+            background: var(--text-secondary);
             transition: var(--transition);
             border-radius: 50%;
         }
         
         input:checked + .switch-slider {
             background: var(--primary-color);
+            border-color: var(--primary-color);
         }
         
         input:checked + .switch-slider:before {
-            transform: translateX(20px);
+            transform: translateX(24px);
+            background: white;
         }
         
-        /* 标签页 */
-        .tabs {
-            display: flex;
-            border-bottom: 1px solid var(--border-color);
-            margin-bottom: 20px;
+        /* ==================== 加载动画 ==================== */
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border-color);
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
         }
         
-        .tab-item {
-            padding: 12px 20px;
-            cursor: pointer;
-            color: var(--text-secondary);
-            transition: var(--transition);
-            position: relative;
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
         
-        .tab-item:hover {
-            color: var(--primary-color);
-        }
-        
-        .tab-item.active {
-            color: var(--primary-color);
-        }
-        
-        .tab-item.active::after {
-            content: "";
-            position: absolute;
-            bottom: -1px;
+        .loading-overlay {
+            position: fixed;
+            top: 0;
             left: 0;
             right: 0;
-            height: 2px;
-            background: var(--primary-color);
-        }
-        
-        /* 节点列表 */
-        .node-list {
-            display: grid;
-            gap: 12px;
-        }
-        
-        .node-item {
-            background: var(--bg-secondary);
-            border-radius: var(--radius-md);
-            padding: 16px;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            transition: var(--transition);
+            justify-content: center;
+            z-index: 9999;
         }
         
-        .node-item:hover {
-            background: var(--bg-tertiary);
+        /* ==================== Toast通知 ==================== */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            pointer-events: none;
         }
         
-        .node-item.active {
-            border: 2px solid var(--primary-color);
-        }
-        
-        .node-info {
-            flex: 1;
-        }
-        
-        .node-name {
-            font-weight: 500;
-            margin-bottom: 4px;
-        }
-        
-        .node-details {
-            color: var(--text-secondary);
-            font-size: 13px;
-        }
-        
-        .node-actions {
+        .toast {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin-bottom: 12px;
             display: flex;
-            gap: 8px;
+            align-items: center;
+            gap: 12px;
+            min-width: 300px;
+            box-shadow: var(--shadow-md);
+            pointer-events: all;
+            animation: toastSlideIn 0.3s ease-out;
         }
         
-        /* 日志查看器 */
-        .log-viewer {
-            background: #1a1a1a;
-            color: #e8e8e8;
-            padding: 16px;
-            border-radius: var(--radius-md);
-            font-family: 'Consolas', 'Monaco', monospace;
-            font-size: 13px;
-            line-height: 1.5;
-            max-height: 400px;
-            overflow-y: auto;
+        @keyframes toastSlideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
         }
         
-        .log-line {
-            margin-bottom: 4px;
-            word-break: break-all;
+        .toast.success {
+            border-left: 4px solid var(--success-color);
         }
         
-        .log-line.error {
-            color: #ff6b6b;
+        .toast.error {
+            border-left: 4px solid var(--danger-color);
         }
         
-        .log-line.warning {
-            color: #ffd93d;
+        .toast.warning {
+            border-left: 4px solid var(--warning-color);
         }
         
-        .log-line.info {
-            color: #6bcf7f;
+        .toast.info {
+            border-left: 4px solid var(--info-color);
         }
         
-        /* 响应式 */
+        .toast-icon {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+        
+        .toast-message {
+            flex: 1;
+            font-size: 14px;
+        }
+        
+        .toast-close {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            opacity: 0.5;
+            transition: opacity 0.2s;
+        }
+        
+        .toast-close:hover {
+            opacity: 1;
+        }
+        
+        /* ==================== 图表容器 ==================== */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 20px;
+        }
+        
+        /* ==================== 响应式设计 ==================== */
         @media (max-width: 768px) {
             .sidebar {
                 position: fixed;
                 left: -240px;
-                z-index: 999;
                 height: 100%;
+                z-index: 999;
             }
             
             .sidebar.mobile-open {
@@ -764,456 +1054,547 @@
             .stats-grid {
                 grid-template-columns: 1fr;
             }
+            
+            .node-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+            
+            .node-actions {
+                width: 100%;
+                justify-content: flex-end;
+            }
         }
         
-        /* 工具提示 */
-        .tooltip {
-            position: relative;
-        }
+        /* ==================== 工具类 ==================== */
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .text-muted { color: var(--text-secondary); }
+        .text-small { font-size: 13px; }
+        .text-nowrap { white-space: nowrap; }
         
-        .tooltip::after {
-            content: attr(data-tooltip);
-            position: absolute;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 6px 12px;
-            border-radius: var(--radius-sm);
-            font-size: 12px;
-            white-space: nowrap;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s;
-        }
+        .mt-1 { margin-top: 8px; }
+        .mt-2 { margin-top: 16px; }
+        .mt-3 { margin-top: 24px; }
+        .mb-1 { margin-bottom: 8px; }
+        .mb-2 { margin-bottom: 16px; }
+        .mb-3 { margin-bottom: 24px; }
         
-        .tooltip:hover::after {
-            opacity: 1;
-        }
-        
-        /* 动画 */
-        .fade-enter-active,
-        .fade-leave-active {
-            transition: opacity 0.3s;
-        }
-        
-        .fade-enter-from,
-        .fade-leave-to {
-            opacity: 0;
-        }
-        
-        /* 图表容器 */
-        .chart-container {
-            position: relative;
-            height: 300px;
-            margin-top: 20px;
-        }
+        .flex { display: flex; }
+        .flex-center { display: flex; align-items: center; justify-content: center; }
+        .flex-between { display: flex; align-items: center; justify-content: space-between; }
+        .gap-1 { gap: 8px; }
+        .gap-2 { gap: 16px; }
+        .gap-3 { gap: 24px; }
     </style>
 </head>
 <body>
     <div id="app">
-        <!-- 侧边栏 -->
-        <aside class="sidebar" :class="{ collapsed: sidebarCollapsed, 'mobile-open': mobileMenuOpen }">
-            <div class="sidebar-header">
-                <div class="logo">
-                    <span class="logo-icon">🚀</span>
-                    <span class="logo-text">Hysteria2</span>
-                </div>
-            </div>
+        <!-- SVG图标定义 -->
+        <svg style="display: none;">
+            <!-- Logo图标 -->
+            <symbol id="icon-logo" viewBox="0 0 24 24">
+                <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z" fill="currentColor"/>
+            </symbol>
             
-            <nav class="nav-menu">
-                <a class="nav-item" :class="{ active: currentPage === 'dashboard' }" @click="navigateTo('dashboard')">
-                    <span class="nav-icon">📊</span>
-                    <span class="nav-text">仪表板</span>
-                </a>
-                <a class="nav-item" :class="{ active: currentPage === 'nodes' }" @click="navigateTo('nodes')">
-                    <span class="nav-icon">🌐</span>
-                    <span class="nav-text">节点管理</span>
-                </a>
-                <a class="nav-item" :class="{ active: currentPage === 'logs' }" @click="navigateTo('logs')">
-                    <span class="nav-icon">📝</span>
-                    <span class="nav-text">日志查看</span>
-                </a>
-                <a class="nav-item" :class="{ active: currentPage === 'settings' }" @click="navigateTo('settings')">
-                    <span class="nav-icon">⚙️</span>
-                    <span class="nav-text">系统设置</span>
-                </a>
-                <a class="nav-item" :class="{ active: currentPage === 'tools' }" @click="navigateTo('tools')">
-                    <span class="nav-icon">🛠️</span>
-                    <span class="nav-text">工具箱</span>
-                </a>
-            </nav>
-        </aside>
+            <!-- 菜单图标 -->
+            <symbol id="icon-menu" viewBox="0 0 24 24">
+                <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" fill="currentColor"/>
+            </symbol>
+            
+            <!-- 仪表板图标 -->
+            <symbol id="icon-dashboard" viewBox="0 0 24 24">
+                <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" fill="currentColor"/>
+            </symbol>
+            
+            <!-- 节点图标 -->
+            <symbol id="icon-nodes" viewBox="0 0 24 24">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="currentColor"/>
+            </symbol>
+            
+            <!-- 日志图标 -->
+            <symbol id="icon-logs" viewBox="0 0 24 24">
+                <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" fill="currentColor"/>
+            </symbol>
+            
+            <!-- 设置图标 -->
+            <symbol id="icon-settings" viewBox="0 0 24 24">
+                <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z" fill="currentColor"/>
+            </symbol>
+            
+            <!-- 关闭图标 -->
+            <symbol id="icon-close" viewBox="0 0 24 24">
+                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill="currentColor"/>
+            </symbol>
+            
+            <!-- 用户图标 -->
+            <symbol id="icon-user" viewBox="0 0 24 24">
+                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="currentColor"/>
+            </symbol>
+            
+            <!-- 登出图标 -->
+            <symbol id="icon-logout" viewBox="0 0 24 24">
+                <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z" fill="currentColor"/>
+            </symbol>
+        </svg>
         
-        <!-- 主内容区 -->
-        <main class="main-content">
-            <!-- 顶部栏 -->
-            <header class="topbar">
-                <div class="topbar-left">
-                    <div class="menu-toggle" @click="toggleSidebar">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-                        </svg>
+        <!-- 登录页面 -->
+        <div v-if="!isAuthenticated" class="login-container">
+            <div class="login-bg-pattern"></div>
+            <div class="login-box">
+                <div class="login-logo">
+                    <svg class="icon icon-xl" style="width: 80px; height: 80px; color: var(--primary-color);">
+                        <use xlink:href="#icon-logo"></use>
+                    </svg>
+                </div>
+                <h1 class="login-title">Hysteria2 Manager</h1>
+                <p class="login-subtitle">Advanced Proxy Management System</p>
+                
+                <form @submit.prevent="handleLogin">
+                    <div class="form-group">
+                        <label class="form-label">用户名</label>
+                        <input 
+                            type="text" 
+                            class="form-input" 
+                            v-model="loginForm.username"
+                            placeholder="请输入用户名"
+                            required
+                            autocomplete="username"
+                        >
                     </div>
-                    <h1 class="page-title">{{ pageTitle }}</h1>
+                    
+                    <div class="form-group">
+                        <label class="form-label">密码</label>
+                        <input 
+                            type="password" 
+                            class="form-input" 
+                            v-model="loginForm.password"
+                            placeholder="请输入密码"
+                            required
+                            autocomplete="current-password"
+                        >
+                    </div>
+                    
+                    <div v-if="loginError" class="form-error mb-2">
+                        {{ loginError }}
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-block" :disabled="isLoggingIn">
+                        <span v-if="!isLoggingIn">登录</span>
+                        <span v-else>登录中...</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- 主界面 -->
+        <div v-else class="app-container">
+            <!-- 侧边栏 -->
+            <aside class="sidebar" :class="{ collapsed: sidebarCollapsed, 'mobile-open': mobileMenuOpen }">
+                <div class="sidebar-header">
+                    <div class="sidebar-logo">
+                        <svg class="sidebar-logo-icon icon">
+                            <use xlink:href="#icon-logo"></use>
+                        </svg>
+                        <span class="sidebar-logo-text">Hysteria2</span>
+                    </div>
                 </div>
                 
-                <div class="topbar-right">
-                    <!-- 连接状态 -->
-                    <div class="badge" :class="connectionBadgeClass">
-                        {{ connectionStatus }}
-                    </div>
+                <nav class="nav-menu">
+                    <a 
+                        class="nav-item" 
+                        :class="{ active: currentPage === 'dashboard' }" 
+                        @click="navigateTo('dashboard')"
+                    >
+                        <svg class="nav-icon icon">
+                            <use xlink:href="#icon-dashboard"></use>
+                        </svg>
+                        <span class="nav-text">仪表板</span>
+                    </a>
                     
-                    <!-- 主题切换 -->
-                    <div class="tooltip" data-tooltip="切换主题">
-                        <button class="btn btn-default btn-sm" @click="toggleTheme">
-                            {{ isDarkMode ? '🌙' : '☀️' }}
-                        </button>
-                    </div>
+                    <a 
+                        class="nav-item" 
+                        :class="{ active: currentPage === 'nodes' }" 
+                        @click="navigateTo('nodes')"
+                    >
+                        <svg class="nav-icon icon">
+                            <use xlink:href="#icon-nodes"></use>
+                        </svg>
+                        <span class="nav-text">节点管理</span>
+                    </a>
                     
-                    <!-- 刷新 -->
-                    <div class="tooltip" data-tooltip="刷新数据">
-                        <button class="btn btn-default btn-sm" @click="refreshData">
-                            🔄
-                        </button>
-                    </div>
-                </div>
-            </header>
+                    <a 
+                        class="nav-item" 
+                        :class="{ active: currentPage === 'logs' }" 
+                        @click="navigateTo('logs')"
+                    >
+                        <svg class="nav-icon icon">
+                            <use xlink:href="#icon-logs"></use>
+                        </svg>
+                        <span class="nav-text">日志查看</span>
+                    </a>
+                    
+                    <a 
+                        class="nav-item" 
+                        :class="{ active: currentPage === 'settings' }" 
+                        @click="navigateTo('settings')"
+                    >
+                        <svg class="nav-icon icon">
+                            <use xlink:href="#icon-settings"></use>
+                        </svg>
+                        <span class="nav-text">系统设置</span>
+                    </a>
+                </nav>
+            </aside>
             
-            <!-- 内容区域 -->
-            <div class="content">
-                <!-- 仪表板页面 -->
-                <div v-if="currentPage === 'dashboard'">
-                    <!-- 统计卡片 -->
-                    <div class="stats-grid">
-                        <div class="stat-card">
-                            <div class="stat-header">
-                                <div class="stat-icon" :class="serviceStatus.hysteria === 'running' ? 'success' : 'danger'">
-                                    {{ serviceStatus.hysteria === 'running' ? '✅' : '❌' }}
+            <!-- 主内容区 -->
+            <main class="main-content">
+                <!-- 顶部栏 -->
+                <header class="topbar">
+                    <div class="topbar-left">
+                        <div class="menu-toggle" @click="toggleSidebar">
+                            <svg class="icon">
+                                <use xlink:href="#icon-menu"></use>
+                            </svg>
+                        </div>
+                        <h1 class="page-title">{{ pageTitle }}</h1>
+                    </div>
+                    
+                    <div class="topbar-right">
+                        <!-- 连接状态 -->
+                        <div class="status-indicator">
+                            <span class="status-dot" :class="connectionStatusClass"></span>
+                            <span>{{ connectionStatusText }}</span>
+                        </div>
+                        
+                        <!-- 用户菜单 -->
+                        <div class="user-menu" @click="showUserMenu = !showUserMenu">
+                            <div class="user-avatar">{{ userInitial }}</div>
+                            <span class="text-small">{{ currentUser }}</span>
+                        </div>
+                        
+                        <!-- 登出按钮 -->
+                        <button class="btn btn-secondary" @click="handleLogout">
+                            <svg class="icon">
+                                <use xlink:href="#icon-logout"></use>
+                            </svg>
+                        </button>
+                    </div>
+                </header>
+                
+                <!-- 内容区域 -->
+                <div class="content">
+                    <!-- 仪表板页面 -->
+                    <div v-if="currentPage === 'dashboard'">
+                        <!-- 统计卡片 -->
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-icon">
+                                    <svg viewBox="0 0 24 24">
+                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="currentColor"/>
+                                    </svg>
+                                </div>
+                                <div class="stat-value">{{ serviceStatus.hysteria === 'running' ? '运行中' : '已停止' }}</div>
+                                <div class="stat-label">服务状态</div>
+                            </div>
+                            
+                            <div class="stat-card">
+                                <div class="stat-icon">
+                                    <svg viewBox="0 0 24 24">
+                                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="currentColor"/>
+                                    </svg>
+                                </div>
+                                <div class="stat-value">{{ currentNodeName || '未选择' }}</div>
+                                <div class="stat-label">当前节点</div>
+                            </div>
+                            
+                            <div class="stat-card">
+                                <div class="stat-icon">
+                                    <svg viewBox="0 0 24 24">
+                                        <path d="M13 2.05v3.03c3.39.49 6 3.39 6 6.92 0 .9-.18 1.75-.48 2.54l2.6 1.53c.56-1.24.88-2.62.88-4.07 0-5.18-3.95-9.45-9-9.95zM12 19c-3.87 0-7-3.13-7-7 0-3.53 2.61-6.43 6-6.92V2.05c-5.06.5-9 4.76-9 9.95 0 5.52 4.47 10 9.99 10 3.31 0 6.24-1.61 8.06-4.09l-2.6-1.53C16.17 17.98 14.21 19 12 19z" fill="currentColor"/>
+                                    </svg>
+                                </div>
+                                <div class="stat-value">{{ formatBytes(stats.traffic.up) }}/s</div>
+                                <div class="stat-label">上传速度</div>
+                            </div>
+                            
+                            <div class="stat-card">
+                                <div class="stat-icon">
+                                    <svg viewBox="0 0 24 24">
+                                        <path d="M11 2.05v3.03C7.61 5.57 5 8.47 5 12c0 3.87 3.13 7 7 7 1.21 0 2.34-.31 3.33-.85l2.59 1.53C16.09 21.38 14.18 22 12 22c-5.52 0-10-4.48-10-10C2 6.82 5.95 2.5 11 2.05zM21.95 11h-3.03c-.48-3.39-3.39-6-6.92-6V2c5.18 0 9.45 3.95 9.95 9z" fill="currentColor"/>
+                                    </svg>
+                                </div>
+                                <div class="stat-value">{{ formatBytes(stats.traffic.down) }}/s</div>
+                                <div class="stat-label">下载速度</div>
+                            </div>
+                        </div>
+                        
+                        <!-- 快速操作 -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">快速操作</h3>
+                            </div>
+                            <div class="flex gap-2">
+                                <button 
+                                    class="btn btn-success" 
+                                    @click="startService" 
+                                    :disabled="serviceStatus.hysteria === 'running'"
+                                >
+                                    启动服务
+                                </button>
+                                <button 
+                                    class="btn btn-danger" 
+                                    @click="stopService" 
+                                    :disabled="serviceStatus.hysteria === 'stopped'"
+                                >
+                                    停止服务
+                                </button>
+                                <button class="btn btn-primary" @click="restartService">
+                                    重启服务
+                                </button>
+                                <button class="btn btn-secondary" @click="testConnection">
+                                    测试连接
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- 连接信息 -->
+                        <div class="card" v-if="connectionInfo.status !== 'unknown'">
+                            <div class="card-header">
+                                <h3 class="card-title">连接信息</h3>
+                            </div>
+                            <div class="table-container">
+                                <table class="table">
+                                    <tr>
+                                        <td>出口IP</td>
+                                        <td>{{ connectionInfo.ip || 'N/A' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>IP位置</td>
+                                        <td>{{ connectionInfo.location || 'N/A' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>延迟</td>
+                                        <td>{{ connectionInfo.latency > 0 ? connectionInfo.latency + ' ms' : 'N/A' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>DNS状态</td>
+                                        <td>
+                                            <span :style="{ color: connectionInfo.dns ? 'var(--success-color)' : 'var(--danger-color)' }">
+                                                {{ connectionInfo.dns ? '正常' : '异常' }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>HTTP状态</td>
+                                        <td>
+                                            <span :style="{ color: connectionInfo.http ? 'var(--success-color)' : 'var(--danger-color)' }">
+                                                {{ connectionInfo.http ? '正常' : '异常' }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <!-- 系统资源 -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">系统资源</h3>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="resourceChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 节点管理页面 -->
+                    <div v-else-if="currentPage === 'nodes'">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">节点列表</h3>
+                                <div class="card-actions">
+                                    <button class="btn btn-primary" @click="showAddNodeModal">
+                                        添加节点
+                                    </button>
                                 </div>
                             </div>
-                            <div class="stat-value">{{ serviceStatus.hysteria === 'running' ? '运行中' : '已停止' }}</div>
-                            <div class="stat-label">服务状态</div>
-                        </div>
-                        
-                        <div class="stat-card">
-                            <div class="stat-header">
-                                <div class="stat-icon info">📍</div>
-                            </div>
-                            <div class="stat-value">{{ currentNodeName || '未选择' }}</div>
-                            <div class="stat-label">当前节点</div>
-                        </div>
-                        
-                        <div class="stat-card">
-                            <div class="stat-header">
-                                <div class="stat-icon warning">⬆️</div>
-                            </div>
-                            <div class="stat-value">{{ formatBytes(stats.traffic.up) }}/s</div>
-                            <div class="stat-label">上传速度</div>
-                        </div>
-                        
-                        <div class="stat-card">
-                            <div class="stat-header">
-                                <div class="stat-icon success">⬇️</div>
-                            </div>
-                            <div class="stat-value">{{ formatBytes(stats.traffic.down) }}/s</div>
-                            <div class="stat-label">下载速度</div>
-                        </div>
-                    </div>
-                    
-                    <!-- 快速操作 -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">快速操作</h3>
-                        </div>
-                        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-                            <button class="btn btn-success" @click="startService" :disabled="serviceStatus.hysteria === 'running'">
-                                ▶️ 启动服务
-                            </button>
-                            <button class="btn btn-danger" @click="stopService" :disabled="serviceStatus.hysteria === 'stopped'">
-                                ⏹️ 停止服务
-                            </button>
-                            <button class="btn btn-primary" @click="restartService">
-                                🔄 重启服务
-                            </button>
-                            <button class="btn btn-default" @click="testConnection">
-                                🧪 测试连接
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- 连接信息 -->
-                    <div class="card" v-if="connectionInfo.status !== 'unknown'">
-                        <div class="card-header">
-                            <h3 class="card-title">连接信息</h3>
-                        </div>
-                        <table class="table">
-                            <tr>
-                                <td>出口IP</td>
-                                <td>{{ connectionInfo.ip || 'N/A' }}</td>
-                            </tr>
-                            <tr>
-                                <td>IP归属地</td>
-                                <td>{{ connectionInfo.location || 'N/A' }}</td>
-                            </tr>
-                            <tr>
-                                <td>连接延迟</td>
-                                <td>{{ connectionInfo.latency > 0 ? connectionInfo.latency + ' ms' : 'N/A' }}</td>
-                            </tr>
-                            <tr>
-                                <td>DNS状态</td>
-                                <td>
-                                    <span class="badge" :class="connectionInfo.dns ? 'badge-success' : 'badge-danger'">
-                                        {{ connectionInfo.dns ? '正常' : '异常' }}
-                                    </span>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>HTTP状态</td>
-                                <td>
-                                    <span class="badge" :class="connectionInfo.http ? 'badge-success' : 'badge-danger'">
-                                        {{ connectionInfo.http ? '正常' : '异常' }}
-                                    </span>
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
-                    
-                    <!-- 系统资源 -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">系统资源</h3>
-                        </div>
-                        <div class="chart-container">
-                            <canvas id="resourceChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- 节点管理页面 -->
-                <div v-else-if="currentPage === 'nodes'">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">节点列表</h3>
-                            <div>
-                                <button class="btn btn-primary btn-sm" @click="showAddNodeModal">
-                                    ➕ 添加节点
-                                </button>
-                                <button class="btn btn-default btn-sm" @click="showImportModal" style="margin-left: 8px;">
-                                    📥 导入订阅
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <div class="node-list" v-if="nodes.length > 0">
-                            <div class="node-item" v-for="node in nodes" :key="node.id" :class="{ active: node.id === currentNodeId }">
-                                <div class="node-info">
-                                    <div class="node-name">{{ node.name }}</div>
-                                    <div class="node-details">
-                                        {{ node.server }}:{{ node.port }}
-                                        <span v-if="node.sni"> | SNI: {{ node.sni }}</span>
+                            
+                            <div class="node-list" v-if="nodes.length > 0">
+                                <div 
+                                    class="node-item" 
+                                    v-for="node in nodes" 
+                                    :key="node.id"
+                                    :class="{ active: node.id === currentNodeId }"
+                                >
+                                    <div class="node-info">
+                                        <div class="node-name">{{ node.name }}</div>
+                                        <div class="node-details">
+                                            {{ node.server }}:{{ node.port }}
+                                            <span v-if="node.sni"> | SNI: {{ node.sni }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="node-actions">
+                                        <button 
+                                            class="btn btn-success btn-sm" 
+                                            @click="useNode(node.id)"
+                                            v-if="node.id !== currentNodeId"
+                                        >
+                                            使用
+                                        </button>
+                                        <button 
+                                            class="btn btn-danger btn-sm" 
+                                            @click="deleteNode(node.id)"
+                                        >
+                                            删除
+                                        </button>
                                     </div>
                                 </div>
-                                <div class="node-actions">
-                                    <button class="btn btn-success btn-sm" @click="useNode(node.id)" v-if="node.id !== currentNodeId">
-                                        使用
-                                    </button>
-                                    <button class="btn btn-default btn-sm" @click="editNode(node)">
-                                        编辑
-                                    </button>
-                                    <button class="btn btn-danger btn-sm" @click="deleteNode(node.id)">
-                                        删除
-                                    </button>
+                            </div>
+                            
+                            <div v-else class="text-center text-muted" style="padding: 60px 0;">
+                                暂无节点，请添加节点
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 日志查看页面 -->
+                    <div v-else-if="currentPage === 'logs'">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">日志查看</h3>
+                                <button class="btn btn-secondary" @click="refreshLogs">
+                                    刷新
+                                </button>
+                            </div>
+                            
+                            <div class="tabs">
+                                <div 
+                                    class="tab-item" 
+                                    :class="{ active: logTab === 'hysteria' }"
+                                    @click="logTab = 'hysteria'"
+                                >
+                                    Hysteria日志
+                                </div>
+                                <div 
+                                    class="tab-item" 
+                                    :class="{ active: logTab === 'manager' }"
+                                    @click="logTab = 'manager'"
+                                >
+                                    管理器日志
+                                </div>
+                            </div>
+                            
+                            <div class="log-viewer">
+                                <div 
+                                    class="log-line" 
+                                    v-for="(line, index) in currentLogs" 
+                                    :key="index"
+                                    :class="getLogClass(line)"
+                                >
+                                    {{ line }}
                                 </div>
                             </div>
                         </div>
-                        
-                        <div v-else style="text-align: center; padding: 40px; color: var(--text-secondary);">
-                            暂无节点，请添加节点或导入订阅
-                        </div>
                     </div>
-                </div>
-                
-                <!-- 日志查看页面 -->
-                <div v-else-if="currentPage === 'logs'">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">日志查看</h3>
-                            <button class="btn btn-default btn-sm" @click="refreshLogs">
-                                🔄 刷新
+                    
+                    <!-- 系统设置页面 -->
+                    <div v-else-if="currentPage === 'settings'">
+                        <!-- 账户设置 -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">账户设置</h3>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">当前用户</label>
+                                <input type="text" class="form-input" :value="currentUser" disabled>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">原密码</label>
+                                <input type="password" class="form-input" v-model="passwordForm.oldPassword">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">新密码</label>
+                                <input type="password" class="form-input" v-model="passwordForm.newPassword">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">确认新密码</label>
+                                <input type="password" class="form-input" v-model="passwordForm.confirmPassword">
+                            </div>
+                            
+                            <button class="btn btn-primary" @click="changePassword">
+                                修改密码
                             </button>
                         </div>
                         
-                        <div class="tabs">
-                            <div class="tab-item" :class="{ active: logTab === 'hysteria' }" @click="logTab = 'hysteria'">
-                                Hysteria日志
+                        <!-- 系统配置 -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">系统配置</h3>
                             </div>
-                            <div class="tab-item" :class="{ active: logTab === 'manager' }" @click="logTab = 'manager'">
-                                管理器日志
+                            
+                            <div class="form-group">
+                                <label class="form-label">Web端口</label>
+                                <input type="number" class="form-input" v-model="config.web_port">
                             </div>
-                        </div>
-                        
-                        <div class="log-viewer">
-                            <div class="log-line" v-for="(line, index) in currentLogs" :key="index" :class="getLogClass(line)">
-                                {{ line }}
+                            
+                            <div class="form-group">
+                                <label class="form-label">日志级别</label>
+                                <select class="form-input" v-model="config.hysteria.log_level">
+                                    <option value="debug">Debug</option>
+                                    <option value="info">Info</option>
+                                    <option value="warn">Warning</option>
+                                    <option value="error">Error</option>
+                                </select>
                             </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- 系统设置页面 -->
-                <div v-else-if="currentPage === 'settings'">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">基本设置</h3>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label class="form-label">Web端口</label>
-                            <input type="number" class="form-input" v-model="config.web_port">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label class="form-label">日志级别</label>
-                            <select class="form-select" v-model="config.hysteria.log_level">
-                                <option value="debug">Debug</option>
-                                <option value="info">Info</option>
-                                <option value="warn">Warning</option>
-                                <option value="error">Error</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label class="form-label">
-                                <input type="checkbox" v-model="config.system.auto_start">
-                                开机自启动
-                            </label>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label class="form-label">
-                                <input type="checkbox" v-model="config.system.auto_optimize">
-                                自动优化系统参数
-                            </label>
-                        </div>
-                        
-                        <button class="btn btn-primary" @click="saveConfig">
-                            💾 保存设置
-                        </button>
-                    </div>
-                    
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">系统优化</h3>
-                        </div>
-                        
-                        <p style="margin-bottom: 16px; color: var(--text-secondary);">
-                            应用推荐的系统优化参数，提升代理性能和稳定性
-                        </p>
-                        
-                        <button class="btn btn-primary" @click="optimizeSystem">
-                            ⚡ 应用优化
-                        </button>
-                    </div>
-                    
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">备份与恢复</h3>
-                        </div>
-                        
-                        <div style="display: flex; gap: 12px;">
-                            <button class="btn btn-default" @click="exportConfig">
-                                📤 导出配置
-                            </button>
-                            <button class="btn btn-default" @click="showImportConfigModal">
-                                📥 导入配置
+                            
+                            <div class="form-group">
+                                <label class="form-label flex gap-2">
+                                    <input type="checkbox" v-model="config.system.auto_start">
+                                    <span>开机自启动</span>
+                                </label>
+                            </div>
+                            
+                            <button class="btn btn-primary" @click="saveConfig">
+                                保存设置
                             </button>
                         </div>
                     </div>
                 </div>
-                
-                <!-- 工具箱页面 -->
-                <div v-else-if="currentPage === 'tools'">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">连接测试</h3>
-                        </div>
-                        
-                        <button class="btn btn-primary btn-lg" @click="runFullTest">
-                            🧪 运行完整测试
-                        </button>
-                        
-                        <div v-if="testResults" style="margin-top: 20px;">
-                            <table class="table">
-                                <tr>
-                                    <td>DNS解析</td>
-                                    <td>
-                                        <span class="badge" :class="testResults.dns ? 'badge-success' : 'badge-danger'">
-                                            {{ testResults.dns ? '✅ 通过' : '❌ 失败' }}
-                                        </span>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>HTTP连接</td>
-                                    <td>
-                                        <span class="badge" :class="testResults.http ? 'badge-success' : 'badge-danger'">
-                                            {{ testResults.http ? '✅ 通过' : '❌ 失败' }}
-                                        </span>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>延迟测试</td>
-                                    <td>{{ testResults.latency > 0 ? testResults.latency + ' ms' : '测试失败' }}</td>
-                                </tr>
-                                <tr>
-                                    <td>出口IP</td>
-                                    <td>{{ testResults.ip || '获取失败' }}</td>
-                                </tr>
-                                <tr>
-                                    <td>IP位置</td>
-                                    <td>{{ testResults.location || '获取失败' }}</td>
-                                </tr>
-                            </table>
-                        </div>
-                    </div>
-                    
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">节点解析器</h3>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label class="form-label">节点链接</label>
-                            <textarea class="form-textarea" v-model="nodeUrlToParse" placeholder="粘贴 hy2:// 或 hysteria2:// 链接"></textarea>
-                        </div>
-                        
-                        <button class="btn btn-primary" @click="parseNodeUrl">
-                            🔍 解析
-                        </button>
-                        
-                        <div v-if="parsedNode" style="margin-top: 20px;">
-                            <pre style="background: var(--bg-secondary); padding: 12px; border-radius: var(--radius-md); overflow-x: auto;">{{ JSON.stringify(parsedNode, null, 2) }}</pre>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </main>
+            </main>
+        </div>
         
         <!-- 添加节点模态框 -->
         <div class="modal" :class="{ show: showNodeModal }">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h3 class="modal-title">{{ editingNode ? '编辑节点' : '添加节点' }}</h3>
-                    <div class="modal-close" @click="closeNodeModal">✕</div>
+                    <h3 class="modal-title">添加节点</h3>
+                    <div class="modal-close" @click="closeNodeModal">
+                        <svg class="icon">
+                            <use xlink:href="#icon-close"></use>
+                        </svg>
+                    </div>
                 </div>
                 
                 <div class="modal-body">
                     <div class="tabs">
-                        <div class="tab-item" :class="{ active: nodeAddMode === 'url' }" @click="nodeAddMode = 'url'">
+                        <div 
+                            class="tab-item" 
+                            :class="{ active: nodeAddMode === 'url' }"
+                            @click="nodeAddMode = 'url'"
+                        >
                             链接导入
                         </div>
-                        <div class="tab-item" :class="{ active: nodeAddMode === 'manual' }" @click="nodeAddMode = 'manual'">
+                        <div 
+                            class="tab-item" 
+                            :class="{ active: nodeAddMode === 'manual' }"
+                            @click="nodeAddMode = 'manual'"
+                        >
                             手动配置
                         </div>
                     </div>
@@ -1221,84 +1602,113 @@
                     <div v-if="nodeAddMode === 'url'">
                         <div class="form-group">
                             <label class="form-label">节点链接</label>
-                            <textarea class="form-textarea" v-model="nodeForm.url" placeholder="粘贴 hy2:// 或 hysteria2:// 链接"></textarea>
+                            <textarea 
+                                class="form-input" 
+                                v-model="nodeForm.url" 
+                                rows="3"
+                                placeholder="粘贴 hy2:// 或 hysteria2:// 链接"
+                            ></textarea>
                         </div>
                         
                         <div class="form-group">
                             <label class="form-label">自定义名称（可选）</label>
-                            <input type="text" class="form-input" v-model="nodeForm.name" placeholder="留空则自动生成">
+                            <input 
+                                type="text" 
+                                class="form-input" 
+                                v-model="nodeForm.name"
+                                placeholder="留空则自动生成"
+                            >
                         </div>
                     </div>
                     
                     <div v-else>
                         <div class="form-group">
                             <label class="form-label">节点名称</label>
-                            <input type="text" class="form-input" v-model="nodeForm.name" placeholder="例如：香港节点">
+                            <input 
+                                type="text" 
+                                class="form-input" 
+                                v-model="nodeForm.name"
+                                placeholder="例如：香港节点"
+                            >
                         </div>
                         
                         <div class="form-group">
                             <label class="form-label">服务器地址</label>
-                            <input type="text" class="form-input" v-model="nodeForm.server" placeholder="例如：server.example.com">
+                            <input 
+                                type="text" 
+                                class="form-input" 
+                                v-model="nodeForm.server"
+                                placeholder="例如：server.example.com"
+                            >
                         </div>
                         
                         <div class="form-group">
                             <label class="form-label">端口</label>
-                            <input type="number" class="form-input" v-model="nodeForm.port" placeholder="443">
+                            <input 
+                                type="number" 
+                                class="form-input" 
+                                v-model="nodeForm.port"
+                                placeholder="443"
+                            >
                         </div>
                         
                         <div class="form-group">
                             <label class="form-label">密码</label>
-                            <input type="password" class="form-input" v-model="nodeForm.password" placeholder="认证密码">
+                            <input 
+                                type="password" 
+                                class="form-input" 
+                                v-model="nodeForm.password"
+                                placeholder="认证密码"
+                            >
                         </div>
                         
                         <div class="form-group">
                             <label class="form-label">SNI（可选）</label>
-                            <input type="text" class="form-input" v-model="nodeForm.sni" placeholder="留空则使用服务器地址">
+                            <input 
+                                type="text" 
+                                class="form-input" 
+                                v-model="nodeForm.sni"
+                                placeholder="留空则使用服务器地址"
+                            >
                         </div>
                         
                         <div class="form-group">
-                            <label class="form-label">
+                            <label class="form-label flex gap-2">
                                 <input type="checkbox" v-model="nodeForm.insecure">
-                                跳过证书验证（仅测试使用）
+                                <span>跳过证书验证（仅测试使用）</span>
                             </label>
                         </div>
                     </div>
                 </div>
                 
                 <div class="modal-footer">
-                    <button class="btn btn-default" @click="closeNodeModal">取消</button>
-                    <button class="btn btn-primary" @click="saveNode">
-                        {{ editingNode ? '保存修改' : '添加节点' }}
-                    </button>
+                    <button class="btn btn-secondary" @click="closeNodeModal">取消</button>
+                    <button class="btn btn-primary" @click="saveNode">添加节点</button>
                 </div>
             </div>
         </div>
         
-        <!-- 导入订阅模态框 -->
-        <div class="modal" :class="{ show: showSubscriptionModal }">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3 class="modal-title">导入订阅</h3>
-                    <div class="modal-close" @click="showSubscriptionModal = false">✕</div>
-                </div>
-                
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label class="form-label">订阅地址</label>
-                        <input type="text" class="form-input" v-model="subscriptionUrl" placeholder="https://example.com/subscription">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">订阅名称（可选）</label>
-                        <input type="text" class="form-input" v-model="subscriptionName" placeholder="我的订阅">
+        <!-- Toast通知容器 -->
+        <div class="toast-container">
+            <transition-group name="toast">
+                <div 
+                    v-for="toast in toasts" 
+                    :key="toast.id"
+                    :class="['toast', toast.type]"
+                >
+                    <div class="toast-message">{{ toast.message }}</div>
+                    <div class="toast-close" @click="removeToast(toast.id)">
+                        <svg class="icon">
+                            <use xlink:href="#icon-close"></use>
+                        </svg>
                     </div>
                 </div>
-                
-                <div class="modal-footer">
-                    <button class="btn btn-default" @click="showSubscriptionModal = false">取消</button>
-                    <button class="btn btn-primary" @click="importSubscription">导入</button>
-                </div>
-            </div>
+            </transition-group>
+        </div>
+        
+        <!-- 加载层 -->
+        <div class="loading-overlay" v-if="isLoading">
+            <div class="spinner"></div>
         </div>
     </div>
     
@@ -1308,11 +1718,22 @@
         createApp({
             data() {
                 return {
+                    // 认证相关
+                    isAuthenticated: false,
+                    currentUser: '',
+                    loginForm: {
+                        username: '',
+                        password: ''
+                    },
+                    loginError: '',
+                    isLoggingIn: false,
+                    
                     // 页面状态
                     currentPage: 'dashboard',
                     sidebarCollapsed: false,
                     mobileMenuOpen: false,
-                    isDarkMode: false,
+                    showUserMenu: false,
+                    isLoading: false,
                     
                     // 服务状态
                     serviceStatus: {
@@ -1349,8 +1770,7 @@
                             log_level: 'info'
                         },
                         system: {
-                            auto_start: true,
-                            auto_optimize: true
+                            auto_start: true
                         }
                     },
                     
@@ -1361,10 +1781,9 @@
                     },
                     logTab: 'hysteria',
                     
-                    // 模态框状态
+                    // 模态框
                     showNodeModal: false,
                     nodeAddMode: 'url',
-                    editingNode: null,
                     nodeForm: {
                         url: '',
                         name: '',
@@ -1375,14 +1794,15 @@
                         insecure: false
                     },
                     
-                    showSubscriptionModal: false,
-                    subscriptionUrl: '',
-                    subscriptionName: '',
+                    // 密码修改
+                    passwordForm: {
+                        oldPassword: '',
+                        newPassword: '',
+                        confirmPassword: ''
+                    },
                     
-                    // 工具箱
-                    testResults: null,
-                    nodeUrlToParse: '',
-                    parsedNode: null,
+                    // Toast通知
+                    toasts: [],
                     
                     // 图表实例
                     resourceChart: null,
@@ -1398,23 +1818,26 @@
                         dashboard: '仪表板',
                         nodes: '节点管理',
                         logs: '日志查看',
-                        settings: '系统设置',
-                        tools: '工具箱'
+                        settings: '系统设置'
                     };
                     return titles[this.currentPage] || '';
                 },
                 
-                connectionStatus() {
+                userInitial() {
+                    return this.currentUser ? this.currentUser[0].toUpperCase() : 'U';
+                },
+                
+                connectionStatusClass() {
+                    if (this.connectionInfo.status === 'connected') return 'connected';
+                    if (this.connectionInfo.status === 'connecting') return 'connecting';
+                    return 'disconnected';
+                },
+                
+                connectionStatusText() {
                     if (this.serviceStatus.hysteria === 'stopped') return '未连接';
                     if (this.connectionInfo.status === 'connected') return '已连接';
                     if (this.connectionInfo.status === 'connecting') return '连接中';
                     return '未连接';
-                },
-                
-                connectionBadgeClass() {
-                    if (this.connectionInfo.status === 'connected') return 'badge-success';
-                    if (this.connectionInfo.status === 'connecting') return 'badge-warning';
-                    return 'badge-danger';
                 },
                 
                 currentNodeName() {
@@ -1428,10 +1851,119 @@
             },
             
             methods: {
+                // 认证相关
+                async checkAuth() {
+                    try {
+                        const response = await axios.get('/api/auth/status');
+                        if (response.data.authenticated) {
+                            this.isAuthenticated = true;
+                            this.currentUser = response.data.data.username;
+                            this.initializeApp();
+                        }
+                    } catch (error) {
+                        console.error('Auth check failed:', error);
+                    }
+                },
+                
+                async handleLogin() {
+                    this.isLoggingIn = true;
+                    this.loginError = '';
+                    
+                    try {
+                        const response = await axios.post('/api/auth/login', this.loginForm);
+                        if (response.data.success) {
+                            this.isAuthenticated = true;
+                            this.currentUser = response.data.data.username;
+                            this.showToast('登录成功', 'success');
+                            this.initializeApp();
+                        } else {
+                            this.loginError = response.data.message || '登录失败';
+                        }
+                    } catch (error) {
+                        this.loginError = error.response?.data?.message || '登录失败，请重试';
+                    } finally {
+                        this.isLoggingIn = false;
+                    }
+                },
+                
+                async handleLogout() {
+                    try {
+                        await axios.post('/api/auth/logout');
+                        this.isAuthenticated = false;
+                        this.currentUser = '';
+                        this.showToast('已退出登录', 'info');
+                        
+                        // 清理定时器
+                        if (this.refreshTimer) {
+                            clearInterval(this.refreshTimer);
+                        }
+                    } catch (error) {
+                        console.error('Logout failed:', error);
+                    }
+                },
+                
+                async changePassword() {
+                    if (this.passwordForm.newPassword !== this.passwordForm.confirmPassword) {
+                        this.showToast('两次输入的密码不一致', 'error');
+                        return;
+                    }
+                    
+                    if (this.passwordForm.newPassword.length < 6) {
+                        this.showToast('新密码至少6个字符', 'error');
+                        return;
+                    }
+                    
+                    try {
+                        const response = await axios.post('/api/auth/change_password', {
+                            old_password: this.passwordForm.oldPassword,
+                            new_password: this.passwordForm.newPassword
+                        });
+                        
+                        if (response.data.success) {
+                            this.showToast('密码修改成功', 'success');
+                            this.passwordForm = {
+                                oldPassword: '',
+                                newPassword: '',
+                                confirmPassword: ''
+                            };
+                        } else {
+                            this.showToast(response.data.message || '修改失败', 'error');
+                        }
+                    } catch (error) {
+                        this.showToast('修改失败', 'error');
+                    }
+                },
+                
+                // 初始化应用
+                initializeApp() {
+                    this.fetchStatus();
+                    this.fetchNodes();
+                    this.fetchConfig();
+                    
+                    // 设置定时刷新
+                    this.refreshTimer = setInterval(() => {
+                        this.fetchStatus();
+                        if (this.currentPage === 'dashboard' && this.resourceChart) {
+                            this.fetchSystemStats();
+                        }
+                    }, 5000);
+                    
+                    // 初始化图表
+                    this.$nextTick(() => {
+                        setTimeout(() => {
+                            this.initResourceChart();
+                        }, 500);
+                    });
+                },
+                
                 // 导航
                 navigateTo(page) {
                     this.currentPage = page;
                     this.mobileMenuOpen = false;
+                    
+                    if (page === 'logs') {
+                        this.fetchLogs();
+                    }
                 },
                 
                 toggleSidebar() {
@@ -1440,12 +1972,6 @@
                     } else {
                         this.sidebarCollapsed = !this.sidebarCollapsed;
                     }
-                },
-                
-                toggleTheme() {
-                    this.isDarkMode = !this.isDarkMode;
-                    document.documentElement.setAttribute('data-theme', this.isDarkMode ? 'dark' : 'light');
-                    localStorage.setItem('theme', this.isDarkMode ? 'dark' : 'light');
                 },
                 
                 // 数据获取
@@ -1500,11 +2026,31 @@
                     }
                 },
                 
-                refreshData() {
-                    this.fetchStatus();
-                    this.fetchNodes();
-                    if (this.currentPage === 'logs') {
-                        this.fetchLogs();
+                async fetchSystemStats() {
+                    try {
+                        const response = await axios.get('/api/system/stats');
+                        if (response.data.success && this.resourceChart) {
+                            const data = response.data.data;
+                            const chart = this.resourceChart;
+                            const now = new Date().toLocaleTimeString();
+                            
+                            chart.data.labels.push(now);
+                            if (chart.data.labels.length > 20) {
+                                chart.data.labels.shift();
+                            }
+                            
+                            chart.data.datasets[0].data.push(data.cpu?.total || 0);
+                            chart.data.datasets[1].data.push(data.memory?.total || 0);
+                            
+                            if (chart.data.datasets[0].data.length > 20) {
+                                chart.data.datasets[0].data.shift();
+                                chart.data.datasets[1].data.shift();
+                            }
+                            
+                            chart.update();
+                        }
+                    } catch (error) {
+                        console.error('获取系统统计失败:', error);
                     }
                 },
                 
@@ -1517,13 +2063,13 @@
                     try {
                         const response = await axios.post('/api/service/start');
                         if (response.data.success) {
-                            this.showMessage('服务启动成功', 'success');
+                            this.showToast('服务启动成功', 'success');
                             setTimeout(() => this.fetchStatus(), 2000);
                         } else {
-                            this.showMessage(response.data.message || '启动失败', 'error');
+                            this.showToast(response.data.message || '启动失败', 'error');
                         }
                     } catch (error) {
-                        this.showMessage('操作失败', 'error');
+                        this.showToast('操作失败', 'error');
                     }
                 },
                 
@@ -1531,13 +2077,13 @@
                     try {
                         const response = await axios.post('/api/service/stop');
                         if (response.data.success) {
-                            this.showMessage('服务已停止', 'success');
+                            this.showToast('服务已停止', 'success');
                             this.fetchStatus();
                         } else {
-                            this.showMessage(response.data.message || '停止失败', 'error');
+                            this.showToast(response.data.message || '停止失败', 'error');
                         }
                     } catch (error) {
-                        this.showMessage('操作失败', 'error');
+                        this.showToast('操作失败', 'error');
                     }
                 },
                 
@@ -1545,19 +2091,35 @@
                     try {
                         const response = await axios.post('/api/service/restart');
                         if (response.data.success) {
-                            this.showMessage('服务重启成功', 'success');
+                            this.showToast('服务重启成功', 'success');
                             setTimeout(() => this.fetchStatus(), 2000);
                         } else {
-                            this.showMessage(response.data.message || '重启失败', 'error');
+                            this.showToast(response.data.message || '重启失败', 'error');
                         }
                     } catch (error) {
-                        this.showMessage('操作失败', 'error');
+                        this.showToast('操作失败', 'error');
+                    }
+                },
+                
+                async testConnection() {
+                    this.isLoading = true;
+                    try {
+                        const response = await axios.get('/api/test');
+                        if (response.data.success) {
+                            this.connectionInfo = response.data.data;
+                            this.showToast('连接测试完成', 'success');
+                        } else {
+                            this.showToast('测试失败', 'error');
+                        }
+                    } catch (error) {
+                        this.showToast('测试失败', 'error');
+                    } finally {
+                        this.isLoading = false;
                     }
                 },
                 
                 // 节点管理
                 showAddNodeModal() {
-                    this.editingNode = null;
                     this.nodeForm = {
                         url: '',
                         name: '',
@@ -1571,43 +2133,22 @@
                     this.showNodeModal = true;
                 },
                 
-                editNode(node) {
-                    this.editingNode = node;
-                    this.nodeForm = { ...node };
-                    this.nodeAddMode = 'manual';
-                    this.showNodeModal = true;
-                },
-                
                 closeNodeModal() {
                     this.showNodeModal = false;
-                    this.editingNode = null;
                 },
                 
                 async saveNode() {
                     try {
-                        if (this.editingNode) {
-                            // 更新节点
-                            const response = await axios.put(`/api/nodes/${this.editingNode.id}`, this.nodeForm);
-                            if (response.data.success) {
-                                this.showMessage('节点更新成功', 'success');
-                                this.fetchNodes();
-                                this.closeNodeModal();
-                            } else {
-                                this.showMessage(response.data.message || '更新失败', 'error');
-                            }
+                        const response = await axios.post('/api/nodes', this.nodeForm);
+                        if (response.data.success) {
+                            this.showToast('节点添加成功', 'success');
+                            this.fetchNodes();
+                            this.closeNodeModal();
                         } else {
-                            // 添加节点
-                            const response = await axios.post('/api/nodes', this.nodeForm);
-                            if (response.data.success) {
-                                this.showMessage('节点添加成功', 'success');
-                                this.fetchNodes();
-                                this.closeNodeModal();
-                            } else {
-                                this.showMessage(response.data.message || '添加失败', 'error');
-                            }
+                            this.showToast(response.data.message || '添加失败', 'error');
                         }
                     } catch (error) {
-                        this.showMessage('操作失败', 'error');
+                        this.showToast('操作失败', 'error');
                     }
                 },
                 
@@ -1617,229 +2158,78 @@
                     try {
                         const response = await axios.delete(`/api/nodes/${nodeId}`);
                         if (response.data.success) {
-                            this.showMessage('节点已删除', 'success');
+                            this.showToast('节点已删除', 'success');
                             this.fetchNodes();
                         } else {
-                            this.showMessage(response.data.message || '删除失败', 'error');
+                            this.showToast(response.data.message || '删除失败', 'error');
                         }
                     } catch (error) {
-                        this.showMessage('操作失败', 'error');
+                        this.showToast('操作失败', 'error');
                     }
                 },
                 
                 async useNode(nodeId) {
+                    this.isLoading = true;
                     try {
                         const response = await axios.post(`/api/nodes/${nodeId}/use`);
                         if (response.data.success) {
-                            this.showMessage('节点切换成功', 'success');
+                            this.showToast('节点切换成功', 'success');
                             this.fetchStatus();
                             this.fetchNodes();
                         } else {
-                            this.showMessage(response.data.message || '切换失败', 'error');
+                            this.showToast(response.data.message || '切换失败', 'error');
                         }
                     } catch (error) {
-                        this.showMessage('操作失败', 'error');
+                        this.showToast('操作失败', 'error');
+                    } finally {
+                        this.isLoading = false;
                     }
                 },
                 
-                // 订阅管理
-                showImportModal() {
-                    this.showSubscriptionModal = true;
-                    this.subscriptionUrl = '';
-                    this.subscriptionName = '';
-                },
-                
-                async importSubscription() {
-                    try {
-                        const response = await axios.post('/api/subscription', {
-                            url: this.subscriptionUrl,
-                            name: this.subscriptionName || '未命名订阅'
-                        });
-                        if (response.data.success) {
-                            this.showMessage(response.data.message, 'success');
-                            this.fetchNodes();
-                            this.showSubscriptionModal = false;
-                        } else {
-                            this.showMessage(response.data.message || '导入失败', 'error');
-                        }
-                    } catch (error) {
-                        this.showMessage('导入失败', 'error');
-                    }
-                },
-                
-                // 连接测试
-                async testConnection() {
-                    try {
-                        const response = await axios.get('/api/test');
-                        if (response.data.success) {
-                            this.connectionInfo = response.data.data;
-                            this.showMessage('连接测试完成', 'success');
-                        } else {
-                            this.showMessage('测试失败', 'error');
-                        }
-                    } catch (error) {
-                        this.showMessage('测试失败', 'error');
-                    }
-                },
-                
-                async runFullTest() {
-                    this.testResults = null;
-                    try {
-                        const response = await axios.get('/api/test');
-                        if (response.data.success) {
-                            this.testResults = response.data.data;
-                        } else {
-                            this.showMessage('测试失败', 'error');
-                        }
-                    } catch (error) {
-                        this.showMessage('测试失败', 'error');
-                    }
-                },
-                
-                // 系统设置
+                // 配置管理
                 async saveConfig() {
                     try {
                         const response = await axios.post('/api/config', this.config);
                         if (response.data.success) {
-                            this.showMessage('设置保存成功', 'success');
+                            this.showToast('设置保存成功', 'success');
                         } else {
-                            this.showMessage('保存失败', 'error');
+                            this.showToast('保存失败', 'error');
                         }
                     } catch (error) {
-                        this.showMessage('保存失败', 'error');
+                        this.showToast('保存失败', 'error');
                     }
-                },
-                
-                async optimizeSystem() {
-                    try {
-                        const response = await axios.post('/api/system/optimize');
-                        if (response.data.success) {
-                            this.showMessage('系统优化成功', 'success');
-                        } else {
-                            this.showMessage(response.data.message || '优化失败', 'error');
-                        }
-                    } catch (error) {
-                        this.showMessage('优化失败', 'error');
-                    }
-                },
-                
-                async exportConfig() {
-                    try {
-                        const response = await axios.get('/api/export/config');
-                        if (response.data.success) {
-                            const data = response.data.data;
-                            const blob = new Blob([data], { type: 'text/plain' });
-                            const url = window.URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.href = url;
-                            a.download = `hysteria2-config-${Date.now()}.txt`;
-                            a.click();
-                            window.URL.revokeObjectURL(url);
-                            this.showMessage('配置导出成功', 'success');
-                        }
-                    } catch (error) {
-                        this.showMessage('导出失败', 'error');
-                    }
-                },
-                
-                showImportConfigModal() {
-                    const input = document.createElement('input');
-                    input.type = 'file';
-                    input.accept = '.txt,.json';
-                    input.onchange = async (e) => {
-                        const file = e.target.files[0];
-                        if (!file) return;
-                        
-                        const reader = new FileReader();
-                        reader.onload = async (e) => {
-                            try {
-                                const response = await axios.post('/api/import/config', {
-                                    data: e.target.result
-                                });
-                                if (response.data.success) {
-                                    this.showMessage('配置导入成功', 'success');
-                                    this.fetchConfig();
-                                    this.fetchNodes();
-                                } else {
-                                    this.showMessage(response.data.message || '导入失败', 'error');
-                                }
-                            } catch (error) {
-                                this.showMessage('导入失败', 'error');
-                            }
-                        };
-                        reader.readAsText(file);
-                    };
-                    input.click();
                 },
                 
                 // 工具函数
                 formatBytes(bytes) {
                     if (bytes === 0) return '0 B';
                     const k = 1024;
-                    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+                    const sizes = ['B', 'KB', 'MB', 'GB'];
                     const i = Math.floor(Math.log(bytes) / Math.log(k));
                     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
                 },
                 
                 getLogClass(line) {
                     if (line.includes('ERROR') || line.includes('error')) return 'error';
-                    if (line.includes('WARN') || line.includes('warning')) return 'warning';
+                    if (line.includes('WARN') || line.includes('warning')) return 'warn';
                     if (line.includes('INFO') || line.includes('info')) return 'info';
                     return '';
                 },
                 
-                parseNodeUrl() {
-                    // 这里简单模拟，实际应该调用后端API
-                    if (!this.nodeUrlToParse) {
-                        this.showMessage('请输入节点链接', 'error');
-                        return;
-                    }
-                    
-                    try {
-                        // 简单解析示例
-                        const url = new URL(this.nodeUrlToParse.replace('hy2://', 'http://').replace('hysteria2://', 'http://'));
-                        this.parsedNode = {
-                            protocol: this.nodeUrlToParse.startsWith('hy2://') ? 'hy2' : 'hysteria2',
-                            server: url.hostname,
-                            port: url.port || 443,
-                            password: url.username,
-                            sni: url.searchParams.get('sni'),
-                            insecure: url.searchParams.get('insecure') === '1'
-                        };
-                    } catch (error) {
-                        this.showMessage('解析失败', 'error');
-                    }
-                },
-                
-                showMessage(message, type = 'info') {
-                    // 简单的消息提示（实际项目中可以使用更好的通知组件）
-                    const colors = {
-                        success: '#52c41a',
-                        error: '#f5222d',
-                        warning: '#faad14',
-                        info: '#1890ff'
-                    };
-                    
-                    const toast = document.createElement('div');
-                    toast.style.cssText = `
-                        position: fixed;
-                        top: 20px;
-                        right: 20px;
-                        padding: 12px 20px;
-                        background: ${colors[type] || colors.info};
-                        color: white;
-                        border-radius: 4px;
-                        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                        z-index: 9999;
-                        animation: slideIn 0.3s ease;
-                    `;
-                    toast.textContent = message;
-                    document.body.appendChild(toast);
+                showToast(message, type = 'info') {
+                    const id = Date.now();
+                    this.toasts.push({ id, message, type });
                     
                     setTimeout(() => {
-                        toast.style.animation = 'slideOut 0.3s ease';
-                        setTimeout(() => document.body.removeChild(toast), 300);
+                        this.removeToast(id);
                     }, 3000);
+                },
+                
+                removeToast(id) {
+                    const index = this.toasts.findIndex(t => t.id === id);
+                    if (index > -1) {
+                        this.toasts.splice(index, 1);
+                    }
                 },
                 
                 initResourceChart() {
@@ -1853,89 +2243,65 @@
                             datasets: [{
                                 label: 'CPU使用率',
                                 data: [],
-                                borderColor: '#4a90e2',
-                                tension: 0.1
+                                borderColor: '#00a6fb',
+                                backgroundColor: 'rgba(0, 166, 251, 0.1)',
+                                tension: 0.4
                             }, {
                                 label: '内存使用率',
                                 data: [],
-                                borderColor: '#52c41a',
-                                tension: 0.1
+                                borderColor: '#00d68f',
+                                backgroundColor: 'rgba(0, 214, 143, 0.1)',
+                                tension: 0.4
                             }]
                         },
                         options: {
                             responsive: true,
                             maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    labels: {
+                                        color: '#8f9bb3'
+                                    }
+                                }
+                            },
                             scales: {
+                                x: {
+                                    ticks: {
+                                        color: '#8f9bb3'
+                                    },
+                                    grid: {
+                                        color: '#2e3350'
+                                    }
+                                },
                                 y: {
                                     beginAtZero: true,
-                                    max: 100
+                                    max: 100,
+                                    ticks: {
+                                        color: '#8f9bb3'
+                                    },
+                                    grid: {
+                                        color: '#2e3350'
+                                    }
                                 }
                             }
                         }
                     });
-                },
-                
-                updateResourceChart() {
-                    if (!this.resourceChart) return;
                     
-                    const chart = this.resourceChart;
-                    const now = new Date().toLocaleTimeString();
-                    
-                    chart.data.labels.push(now);
-                    if (chart.data.labels.length > 20) {
-                        chart.data.labels.shift();
-                    }
-                    
-                    // 模拟数据（实际应该从API获取）
-                    chart.data.datasets[0].data.push(Math.random() * 50 + 20);
-                    chart.data.datasets[1].data.push(Math.random() * 40 + 30);
-                    
-                    if (chart.data.datasets[0].data.length > 20) {
-                        chart.data.datasets[0].data.shift();
-                        chart.data.datasets[1].data.shift();
-                    }
-                    
-                    chart.update();
+                    // 开始获取数据
+                    this.fetchSystemStats();
                 }
             },
             
             mounted() {
-                // 初始化主题
-                const savedTheme = localStorage.getItem('theme');
-                if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                    this.isDarkMode = true;
-                    document.documentElement.setAttribute('data-theme', 'dark');
-                }
+                // 检查认证状态
+                this.checkAuth();
                 
-                // 初始加载数据
-                this.fetchStatus();
-                this.fetchNodes();
-                this.fetchConfig();
-                
-                // 设置定时刷新
-                this.refreshTimer = setInterval(() => {
-                    this.fetchStatus();
-                    this.updateResourceChart();
-                }, 5000);
-                
-                // 初始化图表
-                setTimeout(() => {
-                    this.initResourceChart();
-                }, 500);
-                
-                // 添加样式动画
-                const style = document.createElement('style');
-                style.textContent = `
-                    @keyframes slideIn {
-                        from { transform: translateX(100%); opacity: 0; }
-                        to { transform: translateX(0); opacity: 1; }
+                // 响应式处理
+                window.addEventListener('resize', () => {
+                    if (window.innerWidth > 768) {
+                        this.mobileMenuOpen = false;
                     }
-                    @keyframes slideOut {
-                        from { transform: translateX(0); opacity: 1; }
-                        to { transform: translateX(100%); opacity: 0; }
-                    }
-                `;
-                document.head.appendChild(style);
+                });
             },
             
             unmounted() {
