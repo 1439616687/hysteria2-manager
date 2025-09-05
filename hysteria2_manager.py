@@ -866,7 +866,7 @@ def api_check_update():
         
         # 检查GitHub最新版本
         response = requests.get(
-            f"https://api.github.com/repos/{config_data.get('github_repo', 'yourusername/hysteria2-manager')}/releases/latest",
+            f"https://api.github.com/repos/{config_data.get('github_repo', '1439616687/hysteria2-manager')}/releases/latest",
             timeout=10
         )
         
