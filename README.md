@@ -91,7 +91,7 @@ Hysteria2 Manager 是一个基于 Web 的 Hysteria2 代理管理工具，提供�
 
 ```bash
 # 使用 wget
-wget -O install.sh https://raw.githubusercontent.com/1439616687/hysteria2-webui-manager/refs/heads/main/install.sh && sudo bash install.sh
+wget -O install.sh https://raw.githubusercontent.com/1439616687/hysteria2-manager/refs/heads/main/install.sh && sudo bash install.sh
 
 # 或使用 curl
-curl -fsSL https://raw.githubusercontent.com/1439616687/hysteria2-webui-manager/refs/heads/main/install.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/1439616687/hysteria2-manager/refs/heads/main/install.sh | sudo bash
