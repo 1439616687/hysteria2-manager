@@ -1,0 +1,65 @@
+[Unit]
+Description=Hysteria2 Manager WebUI Service
+Documentation=https://github.com/yourusername/hysteria2-manager
+After=network-online.target
+Wants=network-online.target systemd-networkd-wait-online.service
+
+[Service]
+# 服务类型
+Type=simple
+
+# 运行用户
+User=root
+Group=root
+
+# 工作目录
+WorkingDirectory=/opt/hysteria2-manager
+
+# 环境变量
+Environment="PATH=/opt/hysteria2-manager/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+Environment="PYTHONPATH=/opt/hysteria2-manager"
+Environment="LANG=en_US.UTF-8"
+
+# 启动前检查
+ExecStartPre=/bin/bash -c 'if [ ! -f /opt/hysteria2-manager/data/config.json ]; then echo "配置文件不存在"; exit 1; fi'
+ExecStartPre=/bin/bash -c 'if [ ! -f /opt/hysteria2-manager/venv/bin/python ]; then echo "Python虚拟环境不存在"; exit 1; fi'
+
+# 启动命令
+ExecStart=/opt/hysteria2-manager/venv/bin/python /opt/hysteria2-manager/hysteria2_manager.py
+
+# 重启策略
+Restart=always
+RestartSec=10
+StartLimitInterval=120
+StartLimitBurst=5
+
+# 停止超时
+TimeoutStopSec=10
+
+# 进程管理
+KillMode=mixed
+KillSignal=SIGTERM
+
+# 资源限制
+LimitNOFILE=65535
+LimitNPROC=4096
+LimitCORE=0
+
+# 安全设置
+NoNewPrivileges=false
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/hysteria2-manager/data /var/log/hysteria2
+
+# 日志
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=hysteria2-manager
+
+# 健康检查（可选）
+# ExecReload=/bin/kill -HUP $MAINPID
+# WatchdogSec=30s
+
+[Install]
+WantedBy=multi-user.target
