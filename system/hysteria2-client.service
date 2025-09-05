@@ -1,134 +1,524 @@
-[Unit]
-Description=Hysteria2 Client Service
-Documentation=https://v2.hysteria.network/
-After=network-online.target nss-lookup.target
-Wants=network-online.target
+#!/bin/bash
+# ==================== .gitignore ====================
+# Git ignore file for Hysteria2 Manager project
 
-# 依赖检查
-ConditionPathExists=/usr/local/bin/hysteria
-ConditionPathExists=/etc/hysteria2/client.yaml
+cat > .gitignore << 'EOF'
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
 
-# 冲突检查
-Conflicts=hysteria-server.service
-Conflicts=v2ray.service
-Conflicts=xray.service
+# Project specific
+/data/
+/logs/
+*.log
+*.pid
+*.sock
+/backup/
+/temp/
+/tmp/
+config.local.json
+nodes.local.json
+users.local.json
 
-[Service]
-# 服务类型
-Type=simple
-Restart=on-failure
-RestartSec=10
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
 
-# 用户和权限
-User=root
-Group=root
+# Security
+*.key
+*.pem
+*.crt
+*.cer
+.env
+.env.local
+secrets.json
 
-# 工作目录
-WorkingDirectory=/etc/hysteria2
+# Build
+/dist/
+/build/
+*.egg-info/
+.eggs/
 
-# 环境变量
-Environment="PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-Environment="HYSTERIA_LOG_LEVEL=info"
-Environment="GOGC=50"
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+test_results/
 
-# 网络命名空间（可选）
-# NetworkNamespacePath=/var/run/netns/hysteria
+# Documentation
+/docs/_build/
+/site/
+EOF
 
-# TUN接口清理和准备
-ExecStartPre=-/usr/sbin/ip link delete hytun 2>/dev/null
-ExecStartPre=/bin/sleep 2
-ExecStartPre=/bin/bash -c 'test -f /etc/hysteria2/client.yaml || exit 1'
-ExecStartPre=/bin/bash -c '/usr/local/bin/hysteria version || exit 1'
+# ==================== .env.example ====================
+# Environment variables template
 
-# 主进程启动命令
-ExecStart=/usr/local/bin/hysteria client -c /etc/hysteria2/client.yaml
+cat > .env.example << 'EOF'
+# Hysteria2 Manager Environment Configuration
+# Copy this file to .env and modify as needed
 
-# 停止后清理
-ExecStopPost=-/usr/sbin/ip link delete hytun 2>/dev/null
-ExecStopPost=/bin/bash -c 'iptables -t nat -D POSTROUTING -o hytun -j MASQUERADE 2>/dev/null || true'
-ExecStopPost=/bin/bash -c 'ip rule del fwmark 0x1 table 100 2>/dev/null || true'
-ExecStopPost=/bin/bash -c 'ip route del default dev hytun table 100 2>/dev/null || true'
+# Application Settings
+HY2_MANAGER_PORT=8080
+HY2_MANAGER_HOST=0.0.0.0
+HY2_MANAGER_DEBUG=false
 
-# 重载配置
-ExecReload=/bin/kill -HUP $MAINPID
+# Security Keys (CHANGE THESE!)
+JWT_SECRET=your-super-secret-jwt-key-change-me
+FLASK_SECRET=your-flask-secret-key-change-me
 
-# 进程管理
-KillMode=mixed
-KillSignal=SIGTERM
-TimeoutStartSec=30
-TimeoutStopSec=10
-SendSIGKILL=yes
+# Database (future use)
+# DB_HOST=localhost
+# DB_PORT=3306
+# DB_USER=hysteria2
+# DB_PASSWORD=password
+# DB_NAME=hysteria2_manager
 
-# 重启策略
-StartLimitInterval=120
-StartLimitBurst=5
+# Redis (optional)
+# REDIS_HOST=localhost
+# REDIS_PORT=6379
+# REDIS_DB=0
 
-# 资源限制
-LimitNOFILE=1048576
-LimitNPROC=512
-LimitCORE=infinity
-TasksMax=512
+# Logging
+LOG_LEVEL=INFO
+LOG_FILE=/var/log/hysteria2/manager.log
 
-# 内存管理
-MemoryMax=256M
-MemorySwapMax=0
-MemoryAccounting=true
+# Hysteria2 Binary
+HYSTERIA_BIN=/usr/local/bin/hysteria
+HYSTERIA_CONFIG=/etc/hysteria2/client.yaml
 
-# CPU管理
-CPUWeight=200
-CPUAccounting=true
+# System
+AUTO_START=true
+AUTO_OPTIMIZE=true
+CHECK_UPDATE=true
 
-# 网络权限
-AmbientCapabilities=CAP_NET_ADMIN CAP_NET_RAW CAP_NET_BIND_SERVICE CAP_SYS_PTRACE CAP_DAC_READ_SEARCH
-CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_RAW CAP_NET_BIND_SERVICE CAP_SYS_PTRACE CAP_DAC_READ_SEARCH CAP_SETUID CAP_SETGID
-SecureBits=keep-caps
+# Telegram Bot (optional)
+# TELEGRAM_BOT_TOKEN=your-bot-token
+# TELEGRAM_CHAT_ID=your-chat-id
 
-# 安全设置
-NoNewPrivileges=false
-PrivateTmp=true
-ProtectSystem=strict
-ProtectHome=true
-ProtectKernelTunables=false
-ProtectKernelModules=false
-ProtectControlGroups=true
-RestrictRealtime=true
-RestrictNamespaces=false
-LockPersonality=true
-RemoveIPC=false
-RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK AF_PACKET
-SystemCallFilter=~@clock @cpu-emulation @debug @module @mount @obsolete @raw-io @reboot @swap
+# Email Notifications (optional)
+# SMTP_HOST=smtp.gmail.com
+# SMTP_PORT=587
+# SMTP_USER=your-email@gmail.com
+# SMTP_PASSWORD=your-password
+# SMTP_FROM=Hysteria2 Manager <noreply@example.com>
+# SMTP_TO=admin@example.com
+EOF
 
-# 文件系统权限
-ReadWritePaths=/etc/hysteria2
-ReadWritePaths=/var/log/hysteria2
-ReadWritePaths=/run
-ReadWritePaths=/var/run
-ReadOnlyPaths=/usr/local/bin
+# ==================== docker-compose.yml ====================
+# Docker compose configuration (future implementation)
 
-# 设备访问（TUN需要）
-PrivateDevices=no
-DeviceAllow=/dev/net/tun rw
-DeviceAllow=/dev/null rw
-DeviceAllow=/dev/urandom r
-DevicePolicy=strict
+cat > docker-compose.yml << 'EOF'
+version: '3.8'
 
-# 日志设置
-StandardOutput=journal
-StandardError=journal
-SyslogIdentifier=hysteria2-client
-LogLevelMax=info
+services:
+  hysteria2-manager:
+    build: .
+    image: hysteria2-manager:latest
+    container_name: hysteria2-manager
+    restart: unless-stopped
+    network_mode: host
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    devices:
+      - /dev/net/tun
+    volumes:
+      - ./data:/opt/hysteria2-manager/data
+      - ./logs:/var/log/hysteria2
+      - /etc/hysteria2:/etc/hysteria2
+    environment:
+      - HY2_MANAGER_PORT=8080
+      - HY2_MANAGER_HOST=0.0.0.0
+      - JWT_SECRET=${JWT_SECRET}
+      - FLASK_SECRET=${FLASK_SECRET}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/version"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
-# 环境文件（可选）
-EnvironmentFile=-/etc/default/hysteria2-client
+  # Optional: Redis for caching
+  redis:
+    image: redis:alpine
+    container_name: hysteria2-redis
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
 
-# 监控
-WatchdogSec=60
-NotifyAccess=none
+volumes:
+  redis-data:
 
-# OOM设置
-OOMScoreAdjust=-500
+networks:
+  default:
+    driver: bridge
+EOF
 
-[Install]
-WantedBy=multi-user.target
-Alias=hy2-client.service
-Also=hysteria2-manager.service
+# ==================== Dockerfile ====================
+# Docker image build file (future implementation)
+
+cat > Dockerfile << 'EOF'
+# Multi-stage build for Hysteria2 Manager
+FROM python:3.9-slim as builder
+
+# Build arguments
+ARG HYSTERIA_VERSION=v2.6.2
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    make \
+    wget \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Download Hysteria2 binary
+RUN ARCH=$(dpkg --print-architecture) && \
+    wget -O /usr/local/bin/hysteria \
+    https://github.com/apernet/hysteria/releases/download/${HYSTERIA_VERSION}/hysteria-linux-${ARCH} && \
+    chmod +x /usr/local/bin/hysteria
+
+# Install Python dependencies
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Final stage
+FROM python:3.9-slim
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    iproute2 \
+    iptables \
+    net-tools \
+    dnsutils \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy from builder
+COPY --from=builder /usr/local/bin/hysteria /usr/local/bin/
+COPY --from=builder /usr/local/lib/python3.9/site-packages /usr/local/lib/python3.9/site-packages
+
+# Create directories
+RUN mkdir -p /opt/hysteria2-manager/data \
+    /opt/hysteria2-manager/static \
+    /var/log/hysteria2 \
+    /etc/hysteria2
+
+# Copy application files
+WORKDIR /opt/hysteria2-manager
+COPY hysteria2_manager.py .
+COPY static/webui.html static/
+
+# Create non-root user (optional for future)
+# RUN useradd -m -s /bin/bash hysteria && \
+#     chown -R hysteria:hysteria /opt/hysteria2-manager
+
+# Expose port
+EXPOSE 8080
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8080/api/version || exit 1
+
+# Run as root (required for TUN device)
+USER root
+
+# Entry point
+ENTRYPOINT ["python", "hysteria2_manager.py"]
+CMD ["--host", "0.0.0.0", "--port", "8080"]
+EOF
+
+# ==================== Makefile ====================
+# Build automation
+
+cat > Makefile << 'EOF'
+# Hysteria2 Manager Makefile
+.PHONY: help install dev test clean update backup restore docker
+
+# Variables
+PYTHON := python3
+PIP := pip3
+VENV := venv
+SERVICE := hysteria2-manager
+
+help:
+	@echo "Hysteria2 Manager - Make Commands"
+	@echo "================================="
+	@echo "make install    - Install the application"
+	@echo "make dev        - Run in development mode"
+	@echo "make test       - Run tests"
+	@echo "make clean      - Clean temporary files"
+	@echo "make update     - Update to latest version"
+	@echo "make backup     - Backup configuration"
+	@echo "make restore    - Restore configuration"
+	@echo "make docker     - Build Docker image"
+	@echo "make start      - Start services"
+	@echo "make stop       - Stop services"
+	@echo "make restart    - Restart services"
+	@echo "make status     - Check service status"
+	@echo "make logs       - View logs"
+
+install:
+	@echo "Installing Hysteria2 Manager..."
+	@sudo bash install.sh
+
+dev:
+	@echo "Starting development server..."
+	@source $(VENV)/bin/activate && $(PYTHON) hysteria2_manager.py --debug
+
+test:
+	@echo "Running tests..."
+	@source $(VENV)/bin/activate && pytest tests/
+
+clean:
+	@echo "Cleaning temporary files..."
+	@find . -type f -name "*.pyc" -delete
+	@find . -type d -name "__pycache__" -delete
+	@rm -rf .pytest_cache
+	@rm -rf htmlcov
+	@rm -rf .coverage
+
+update:
+	@echo "Updating Hysteria2 Manager..."
+	@git pull
+	@sudo bash install.sh update
+
+backup:
+	@echo "Creating backup..."
+	@mkdir -p backup
+	@tar -czf backup/hysteria2-manager-backup-$(shell date +%Y%m%d-%H%M%S).tar.gz \
+		data/ \
+		/etc/hysteria2/client.yaml \
+		2>/dev/null || true
+	@echo "Backup created in backup/ directory"
+
+restore:
+	@echo "Restoring from backup..."
+	@if [ -z "$(FILE)" ]; then \
+		echo "Usage: make restore FILE=backup/backup-file.tar.gz"; \
+		exit 1; \
+	fi
+	@tar -xzf $(FILE) -C /
+	@echo "Restore completed"
+
+docker:
+	@echo "Building Docker image..."
+	@docker build -t hysteria2-manager:latest .
+
+docker-run:
+	@echo "Running Docker container..."
+	@docker-compose up -d
+
+docker-stop:
+	@echo "Stopping Docker container..."
+	@docker-compose down
+
+start:
+	@echo "Starting services..."
+	@sudo systemctl start hysteria2-manager
+	@sudo systemctl start hysteria2-client
+
+stop:
+	@echo "Stopping services..."
+	@sudo systemctl stop hysteria2-client
+	@sudo systemctl stop hysteria2-manager
+
+restart:
+	@echo "Restarting services..."
+	@sudo systemctl restart hysteria2-manager
+	@sudo systemctl restart hysteria2-client
+
+status:
+	@echo "Service Status:"
+	@echo "==============="
+	@sudo systemctl status hysteria2-manager --no-pager | head -10
+	@echo ""
+	@sudo systemctl status hysteria2-client --no-pager | head -10
+
+logs:
+	@echo "Viewing logs (press Ctrl+C to exit)..."
+	@sudo journalctl -u hysteria2-manager -f
+
+logs-client:
+	@sudo journalctl -u hysteria2-client -f
+
+version:
+	@echo "Hysteria2 Manager Version:"
+	@grep VERSION hysteria2_manager.py | head -1
+	@echo ""
+	@echo "Hysteria2 Version:"
+	@/usr/local/bin/hysteria version
+
+dependencies:
+	@echo "Installing dependencies..."
+	@$(PIP) install -r requirements.txt
+
+lint:
+	@echo "Running linter..."
+	@source $(VENV)/bin/activate && pylint hysteria2_manager.py
+
+format:
+	@echo "Formatting code..."
+	@source $(VENV)/bin/activate && black hysteria2_manager.py
+EOF
+
+# ==================== scripts/quick-install.sh ====================
+# Quick installation script for lazy users
+
+mkdir -p scripts
+cat > scripts/quick-install.sh << 'EOF'
+#!/bin/bash
+# Quick install script for Hysteria2 Manager
+# Usage: curl -fsSL https://example.com/quick-install.sh | bash
+
+set -e
+
+echo "Installing Hysteria2 Manager..."
+
+# Download and run main installer
+wget -O /tmp/install.sh https://raw.githubusercontent.com/yourusername/hysteria2-manager/main/install.sh
+chmod +x /tmp/install.sh
+sudo bash /tmp/install.sh
+
+# Cleanup
+rm -f /tmp/install.sh
+
+echo "Installation complete!"
+echo "Access WebUI at: http://$(curl -s ifconfig.io):8080"
+echo "Default credentials: admin / admin"
+EOF
+
+chmod +x scripts/quick-install.sh
+
+# ==================== scripts/backup.sh ====================
+# Automated backup script
+
+cat > scripts/backup.sh << 'EOF'
+#!/bin/bash
+# Automated backup script for Hysteria2 Manager
+
+BACKUP_DIR="/backup/hysteria2-manager"
+BACKUP_RETENTION=7  # Keep backups for 7 days
+
+# Create backup directory
+mkdir -p "$BACKUP_DIR"
+
+# Create timestamped backup
+TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+BACKUP_FILE="$BACKUP_DIR/backup-$TIMESTAMP.tar.gz"
+
+echo "Creating backup: $BACKUP_FILE"
+
+# Backup files
+tar -czf "$BACKUP_FILE" \
+    /opt/hysteria2-manager/data \
+    /etc/hysteria2 \
+    /etc/systemd/system/hysteria2-*.service \
+    2>/dev/null || true
+
+echo "Backup completed: $BACKUP_FILE"
+
+# Clean old backups
+echo "Cleaning old backups..."
+find "$BACKUP_DIR" -name "backup-*.tar.gz" -mtime +$BACKUP_RETENTION -delete
+
+echo "Backup process finished"
+EOF
+
+chmod +x scripts/backup.sh
+
+# ==================== scripts/health-check.sh ====================
+# Health monitoring script
+
+cat > scripts/health-check.sh << 'EOF'
+#!/bin/bash
+# Health check script for Hysteria2 Manager
+
+API_URL="http://127.0.0.1:8080/api/status"
+MAX_RETRIES=3
+RETRY_DELAY=5
+
+check_service() {
+    local service=$1
+    if systemctl is-active "$service" >/dev/null 2>&1; then
+        echo "✓ $service is running"
+        return 0
+    else
+        echo "✗ $service is not running"
+        return 1
+    fi
+}
+
+check_api() {
+    for i in $(seq 1 $MAX_RETRIES); do
+        if curl -s -f "$API_URL" >/dev/null 2>&1; then
+            echo "✓ API is responding"
+            return 0
+        fi
+        echo "  Retry $i/$MAX_RETRIES..."
+        sleep $RETRY_DELAY
+    done
+    echo "✗ API is not responding"
+    return 1
+}
+
+check_tun() {
+    if ip link show hytun >/dev/null 2>&1; then
+        echo "✓ TUN interface exists"
+        return 0
+    else
+        echo "✗ TUN interface not found"
+        return 1
+    fi
+}
+
+echo "==================================="
+echo "Hysteria2 Manager Health Check"
+echo "==================================="
+echo ""
+
+ERRORS=0
+
+check_service "hysteria2-manager" || ((ERRORS++))
+check_service "hysteria2-client" || ((ERRORS++))
+check_api || ((ERRORS++))
+check_tun || ((ERRORS++))
+
+echo ""
+if [ $ERRORS -eq 0 ]; then
+    echo "✓ All systems operational"
+    exit 0
+else
+    echo "✗ Found $ERRORS issues"
+    exit 1
+fi
+EOF
+
+chmod +x scripts/health-check.sh
+
+echo "All additional files created successfully!"
