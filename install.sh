@@ -2,12 +2,12 @@
 
 # Hysteria2 Manager v2.0 - 安装脚本
 # 完全重构版本，修复所有已知问题，增加认证功能
-# 项目地址: https://github.com/yourusername/hysteria2-manager
+# 项目地址: https://github.com/1439616687/hysteria2-manager
 
 set -e
 
 # ================== 配置变量 ==================
-GITHUB_REPO="yourusername/hysteria2-manager"
+GITHUB_REPO="1439616687/hysteria2-manager"
 INSTALL_DIR="/opt/hysteria2-manager"
 DATA_DIR="$INSTALL_DIR/data"
 SYSTEM_DIR="$INSTALL_DIR/system"
@@ -638,7 +638,7 @@ case "$1" in
         
     update)
         echo -e "${BLUE}Checking for updates...${NC}"
-        bash <(curl -fsSL https://raw.githubusercontent.com/yourusername/hysteria2-manager/main/install.sh) update
+        bash <(curl -fsSL https://raw.githubusercontent.com/1439616687/hysteria2-manager/main/install.sh) update
         ;;
         
     *)
