@@ -1,232 +1,232 @@
-## README.md - 项目文档 v2.0
-
-```markdown
 # Hysteria2 Manager v2.0
 
 <div align="center">
 
-![Hysteria2 Manager](https://img.shields.io/badge/Hysteria2-Manager%20v2.0-00a6fb?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTEyIDJMMiA3djEwYzAgNS41NSAzLjg0IDEwLjc0IDkgMTIgNS4xNi0xLjI2IDktNi40NSA5LTEyVjdMMTIgMnoiIGZpbGw9IiMwMGE2ZmIiLz48L3N2Zz4=)
-![Version](https://img.shields.io/badge/version-2.0.0-00d68f?style=for-the-badge)
-![License](https://img.shields.io/badge/license-MIT-ffaa00?style=for-the-badge)
-![Platform](https://img.shields.io/badge/platform-Linux-0095ff?style=for-the-badge)
+![Hysteria2 Manager](https://img.shields.io/badge/Hysteria2-Manager%20v2.0-00a6fb?style=for-the-badge)
+![版本](https://img.shields.io/badge/版本-2.0.0-00d68f?style=for-the-badge)
+![许可证](https://img.shields.io/badge/许可证-MIT-ffaa00?style=for-the-badge)
+![平台](https://img.shields.io/badge/平台-Linux-0095ff?style=for-the-badge)
 
-**🚀 Advanced Proxy Management System with Web Authentication**
+**🚀 先进的代理管理系统 - 带Web认证功能**
 
-[**English**](#) | [**简体中文**](#) | [**Installation**](#-quick-installation) | [**Documentation**](#-usage-guide) | [**API**](#-api-documentation)
+[**功能特性**](#核心功能) | [**快速安装**](#一键安装) | [**使用教程**](#使用教程) | [**API文档**](#api-文档) | [**常见问题**](#常见问题)
 
 </div>
 
 ---
 
-## 📋 Table of Contents
+## 📋 目录
 
-- [Introduction](#-introduction)
-- [Features](#-features)
-- [System Requirements](#-system-requirements)
-- [Quick Installation](#-quick-installation)
-- [Usage Guide](#-usage-guide)
-- [Configuration](#-configuration)
-- [Command Reference](#-command-reference)
-- [API Documentation](#-api-documentation)
-- [Troubleshooting](#-troubleshooting)
-- [FAQ](#-faq)
-- [Changelog](#-changelog)
-- [Contributing](#-contributing)
-- [License](#-license)
+- [项目介绍](#项目介绍)
+- [核心功能](#核心功能)
+- [系统要求](#系统要求)
+- [一键安装](#一键安装)
+- [使用教程](#使用教程)
+- [配置说明](#配置说明)
+- [命令参考](#命令参考)
+- [API文档](#api-文档)
+- [故障排查](#故障排查)
+- [常见问题](#常见问题)
+- [更新日志](#更新日志)
+- [开发说明](#开发说明)
+- [许可证](#许可证)
 
-## 🌟 Introduction
+## 🌟 项目介绍
 
-Hysteria2 Manager v2.0 is a comprehensive web-based management system for Hysteria2 proxy service. It provides an intuitive, secure, and feature-rich interface for managing your proxy nodes, monitoring system resources, and controlling services.
+Hysteria2 Manager v2.0 是一个功能完善的 Hysteria2 代理服务Web管理系统。它提供了直观、安全、功能丰富的界面来管理您的代理节点、监控系统资源和控制服务。
 
-### Why Hysteria2 Manager?
+### 为什么选择 Hysteria2 Manager？
 
-- **🔐 Secure Authentication** - Protected web interface with user authentication
-- **🎨 Modern UI** - Sleek, tech-style interface with dark theme
-- **⚡ One-Click Deployment** - Automated installation and configuration
-- **📊 Real-time Monitoring** - Live traffic and system resource statistics
-- **🌍 Multi-node Support** - Easy switching between multiple proxy servers
-- **🛡️ System Optimization** - Automatic kernel parameter tuning
+- **🔐 安全认证** - 带用户认证的Web界面保护
+- **🎨 现代化UI** - 科技风格的深色主题界面
+- **⚡ 一键部署** - 自动化安装和配置
+- **📊 实时监控** - 实时流量和系统资源统计
+- **🌍 多节点支持** - 轻松切换多个代理服务器
+- **🛡️ 系统优化** - 自动内核参数调优
 
-## ✨ Features
+## ✨ 核心功能
 
-### Core Features
+### 主要功能
 
-- ✅ **Web Authentication System** - Secure login with session management
-- ✅ **Node Management** - Add, edit, delete, and switch nodes
-- ✅ **Service Control** - Start/stop/restart proxy service
-- ✅ **Real-time Statistics** - Traffic, CPU, memory monitoring
-- ✅ **Log Viewer** - Real-time log streaming
-- ✅ **System Settings** - Comprehensive configuration options
-- ✅ **URL Parsing** - Support for hy2://, hysteria2://, hysteria:// formats
-- ✅ **Password Management** - Secure password change functionality
+- ✅ **Web认证系统** - 安全登录和会话管理
+- ✅ **节点管理** - 添加、编辑、删除和切换节点
+- ✅ **服务控制** - 启动/停止/重启代理服务
+- ✅ **实时统计** - 流量、CPU、内存监控
+- ✅ **日志查看器** - 实时日志流显示
+- ✅ **系统设置** - 全面的配置选项
+- ✅ **URL解析** - 支持 hy2://、hysteria2://、hysteria:// 格式
+- ✅ **密码管理** - 安全的密码修改功能
 
-### Technical Features
+### 技术特性
 
-- 🔧 **RESTful API** - Complete API for automation
-- 🐍 **Python Backend** - Based on Flask framework
-- 📦 **Single-file Frontend** - All UI code in one HTML file
-- 🔄 **Auto Updates** - Check and install updates
-- 📱 **Responsive Design** - Mobile-friendly interface
-- 🌐 **Multi-language Support** - Chinese/English (planned)
+- 🔧 **RESTful API** - 完整的API用于自动化
+- 🐍 **Python后端** - 基于Flask框架
+- 📦 **单文件前端** - 所有UI代码在一个HTML文件中
+- 🔄 **自动更新** - 检查并安装更新
+- 📱 **响应式设计** - 移动端友好界面
+- 🌐 **国际化支持** - 中文/英文（计划中）
 
-### Security Features
+### 安全特性
 
-- 🔒 **Encrypted Storage** - Secure credential storage
-- 🚫 **Login Throttling** - Protection against brute force
-- ⏱️ **Session Timeout** - Automatic logout for security
-- 📝 **Audit Logging** - Track all operations
+- 🔒 **加密存储** - 安全的凭证存储
+- 🚫 **登录限制** - 防止暴力破解
+- ⏱️ **会话超时** - 自动登出保护
+- 📝 **审计日志** - 跟踪所有操作
 
-## 💻 System Requirements
+## 💻 系统要求
 
-### Minimum Requirements
+### 最低要求
 
-| Component | Requirement |
-|-----------|-------------|
-| **OS** | Linux (Ubuntu 18.04+, Debian 9+, CentOS 7+) |
-| **Architecture** | x86_64, arm64, armv7 |
-| **RAM** | 512MB |
-| **Storage** | 100MB available |
+| 组件 | 要求 |
+|------|------|
+| **操作系统** | Linux (Ubuntu 18.04+, Debian 9+, CentOS 7+) |
+| **架构** | x86_64, arm64, armv7 |
+| **内存** | 512MB |
+| **存储** | 100MB 可用空间 |
 | **Python** | 3.6+ |
-| **Network** | Internet connection |
-| **Privileges** | Root access |
+| **网络** | 互联网连接 |
+| **权限** | Root 权限 |
 
-### Recommended Configuration
+### 推荐配置
 
-| Component | Recommendation |
-|-----------|---------------|
-| **OS** | Ubuntu 22.04 LTS |
-| **RAM** | 1GB+ |
-| **Storage** | 500MB+ |
-| **CPU** | 2+ cores |
-| **Network** | Stable broadband |
+| 组件 | 推荐 |
+|------|------|
+| **操作系统** | Ubuntu 22.04 LTS |
+| **内存** | 1GB+ |
+| **存储** | 500MB+ |
+| **CPU** | 2+ 核心 |
+| **网络** | 稳定的宽带连接 |
 
-## 🚀 Quick Installation
+## 🚀 一键安装
 
-### One-Command Installation
+### 快速安装命令
 
 ```bash
-# Using wget
+# 使用 wget
 wget -O install.sh https://raw.githubusercontent.com/yourusername/hysteria2-manager/main/install.sh && sudo bash install.sh
 
-# Using curl
+# 使用 curl
 curl -fsSL https://raw.githubusercontent.com/yourusername/hysteria2-manager/main/install.sh | sudo bash
+
+# 国内用户使用镜像
+wget -O install.sh https://ghproxy.com/https://raw.githubusercontent.com/yourusername/hysteria2-manager/main/install.sh && sudo bash install.sh
 ```
 
-### Installation Process
+### 安装过程
 
-The installer will automatically:
-1. ✅ Detect system environment
-2. ✅ Install dependencies
-3. ✅ Download Hysteria2 core
-4. ✅ Configure system services
-5. ✅ Optimize kernel parameters
-6. ✅ Start web interface
+安装程序将自动：
+1. ✅ 检测系统环境
+2. ✅ 安装依赖包
+3. ✅ 下载 Hysteria2 核心
+4. ✅ 配置系统服务
+5. ✅ 优化内核参数
+6. ✅ 启动Web界面
 
-### Post-Installation
+### 安装完成后
 
-After installation, you'll see:
+安装成功后，您将看到：
 ```
 ══════════════════════════════════════════════════
-     Hysteria2 Manager Installation Successful!
+     Hysteria2 Manager 安装成功！
 ══════════════════════════════════════════════════
-Access Information:
-  Local: http://127.0.0.1:8080
-  Remote: http://YOUR_SERVER_IP:8080
+访问信息:
+  本地访问: http://127.0.0.1:8080
+  远程访问: http://您的服务器IP:8080
 
-Login Credentials:
-  Username: admin
-  Password: admin
-  ⚠️ Please change the default password immediately!
+登录信息:
+  用户名: admin
+  密码: admin
+  ⚠️ 请立即登录并修改默认密码！
 ══════════════════════════════════════════════════
 ```
 
-## 📖 Usage Guide
+## 📖 使用教程
 
-### 1. First Login
+### 1. 首次登录
 
-1. Open your browser and navigate to `http://YOUR_SERVER_IP:8080`
-2. Login with default credentials:
-   - **Username:** `admin`
-   - **Password:** `admin`
-3. **Important:** Change your password immediately after first login
+1. 打开浏览器访问 `http://您的服务器IP:8080`
+2. 使用默认凭证登录：
+   - **用户名：** `admin`
+   - **密码：** `admin`
+3. **重要：** 首次登录后立即修改密码
 
-### 2. Adding Nodes
+### 2. 添加节点
 
-#### Method 1: Import from URL
+#### 方法一：URL导入
 
-1. Navigate to **Node Management**
-2. Click **Add Node**
-3. Select **Link Import** tab
-4. Paste your node URL:
+1. 进入 **节点管理**
+2. 点击 **添加节点**
+3. 选择 **链接导入** 标签
+4. 粘贴您的节点URL：
    ```
-   hy2://password@server.com:443/?sni=server.com
-   hysteria2://password@server.com:443/?sni=server.com
+   hy2://密码@服务器.com:443/?sni=服务器.com
+   hysteria2://密码@服务器.com:443/?sni=服务器.com
    ```
-5. Click **Add Node**
+5. 点击 **添加节点**
 
-#### Method 2: Manual Configuration
+#### 方法二：手动配置
 
-1. Navigate to **Node Management**
-2. Click **Add Node**
-3. Select **Manual Config** tab
-4. Fill in the details:
-   - **Name:** Custom name for the node
-   - **Server:** Server address (IP or domain)
-   - **Port:** Server port (default: 443)
-   - **Password:** Authentication password
-   - **SNI:** Server Name Indication (optional)
-5. Click **Add Node**
+1. 进入 **节点管理**
+2. 点击 **添加节点**
+3. 选择 **手动配置** 标签
+4. 填写详细信息：
+   - **名称：** 节点自定义名称
+   - **服务器：** 服务器地址（IP或域名）
+   - **端口：** 服务器端口（默认443）
+   - **密码：** 认证密码
+   - **SNI：** 服务器名称指示（可选）
+5. 点击 **添加节点**
 
-### 3. Connecting to Proxy
+### 3. 连接代理
 
-1. Select a node from the list
-2. Click **Use** button
-3. Go to **Dashboard**
-4. Click **Start Service**
-5. Wait for connection status to show **Connected**
+1. 从列表中选择一个节点
+2. 点击 **使用** 按钮
+3. 进入 **仪表板**
+4. 点击 **启动服务**
+5. 等待连接状态显示 **已连接**
 
-### 4. Monitoring Status
+### 4. 监控状态
 
-The dashboard displays:
-- **Service Status** - Running/Stopped
-- **Current Node** - Active node name
-- **Upload Speed** - Real-time upload traffic
-- **Download Speed** - Real-time download traffic
-- **Connection Info** - IP, location, latency
-- **System Resources** - CPU, memory usage
+仪表板显示：
+- **服务状态** - 运行中/已停止
+- **当前节点** - 活动节点名称
+- **上传速度** - 实时上传流量
+- **下载速度** - 实时下载流量
+- **连接信息** - IP、位置、延迟
+- **系统资源** - CPU、内存使用率
 
-### 5. Managing Password
+### 5. 修改密码
 
-1. Go to **System Settings**
-2. Under **Account Settings**:
-   - Enter current password
-   - Enter new password
-   - Confirm new password
-3. Click **Change Password**
+1. 进入 **系统设置**
+2. 在 **账户设置** 下：
+   - 输入当前密码
+   - 输入新密码
+   - 确认新密码
+3. 点击 **修改密码**
 
-## ⚙️ Configuration
+## ⚙️ 配置说明
 
-### Configuration Files
+### 配置文件位置
 
 ```
 /opt/hysteria2-manager/
 ├── data/
-│   ├── config.json        # System configuration
-│   ├── nodes.json         # Node data
-│   └── users.json         # User data
+│   ├── config.json        # 系统配置
+│   ├── nodes.json         # 节点数据
+│   └── users.json         # 用户数据
 ├── static/
-│   └── dashboard.html     # Web interface
-└── hysteria2_manager.py   # Core program
+│   └── dashboard.html     # Web界面
+└── hysteria2_manager.py   # 核心程序
 
 /etc/hysteria2/
-└── client.yaml            # Hysteria2 client config
+└── client.yaml            # Hysteria2客户端配置
 
 /var/log/hysteria2/
-├── manager.log            # Manager logs
-└── hysteria.log           # Hysteria2 logs
+├── manager.log            # 管理器日志
+└── hysteria.log           # Hysteria2日志
 ```
 
-### System Configuration (config.json)
+### 系统配置 (config.json)
 
 ```json
 {
@@ -258,97 +258,97 @@ The dashboard displays:
 }
 ```
 
-### Node URL Format
+### 节点URL格式
 
-Supported formats:
+支持的格式：
 ```
-# Basic format
-hy2://password@server:port
+# 基本格式
+hy2://密码@服务器:端口
 
-# With parameters
-hy2://password@server:port/?sni=domain.com&insecure=1
+# 带参数
+hy2://密码@服务器:端口/?sni=域名&insecure=1
 
-# Full format
-hysteria2://password@server:port/?sni=domain.com&obfs=salamander&obfs-password=pass
+# 完整格式
+hysteria2://密码@服务器:端口/?sni=域名&obfs=salamander&obfs-password=混淆密码
 
-# With custom name
-hy2://password@server:port/#NodeName
+# 带自定义名称
+hy2://密码@服务器:端口/#节点名称
 ```
 
-### Environment Variables
+### 环境变量
 
-Override default settings:
+可以通过环境变量覆盖默认设置：
 ```bash
-export HY2_MANAGER_PORT=8888          # Web port
-export HY2_MANAGER_HOST=127.0.0.1     # Listen address
-export HY2_MANAGER_DEBUG=true         # Debug mode
+export HY2_MANAGER_PORT=8888          # Web端口
+export HY2_MANAGER_HOST=127.0.0.1     # 监听地址
+export HY2_MANAGER_DEBUG=true         # 调试模式
 ```
 
-## 🔧 Command Reference
+## 🔧 命令参考
 
-### CLI Tool (hy2)
+### CLI工具 (hy2)
 
-After installation, use the `hy2` command for quick management:
-
-```bash
-# Service Management
-hy2 status              # Show service status
-hy2 start               # Start proxy service
-hy2 stop                # Stop proxy service
-hy2 restart             # Restart proxy service
-
-# Information Display
-hy2 test                # Test proxy connection
-hy2 web                 # Show WebUI address
-
-# Logs
-hy2 logs                # View client logs
-hy2 manager-logs        # View manager logs
-
-# Updates
-hy2 update              # Check for updates
-```
-
-### Service Management (systemctl)
+安装后，使用 `hy2` 命令快速管理：
 
 ```bash
-# Manager Service
-sudo systemctl status hysteria2-manager    # Check status
-sudo systemctl start hysteria2-manager     # Start service
-sudo systemctl stop hysteria2-manager      # Stop service
-sudo systemctl restart hysteria2-manager   # Restart service
-sudo systemctl enable hysteria2-manager    # Enable auto-start
+# 服务管理
+hy2 status              # 显示服务状态
+hy2 start               # 启动代理服务
+hy2 stop                # 停止代理服务
+hy2 restart             # 重启代理服务
 
-# Client Service
-sudo systemctl status hysteria2-client     # Check status
-sudo systemctl start hysteria2-client      # Start client
-sudo systemctl stop hysteria2-client       # Stop client
-sudo systemctl restart hysteria2-client    # Restart client
-sudo systemctl enable hysteria2-client     # Enable auto-start
+# 信息显示
+hy2 test                # 测试代理连接
+hy2 web                 # 显示WebUI地址
 
-# View Logs
-sudo journalctl -u hysteria2-manager -f    # Manager logs
-sudo journalctl -u hysteria2-client -f     # Client logs
+# 日志查看
+hy2 logs                # 查看客户端日志
+hy2 manager-logs        # 查看管理器日志
+
+# 更新
+hy2 update              # 检查更新
 ```
 
-### Installation Management
+### 服务管理 (systemctl)
 
 ```bash
-# Update
+# 管理器服务
+sudo systemctl status hysteria2-manager    # 检查状态
+sudo systemctl start hysteria2-manager     # 启动服务
+sudo systemctl stop hysteria2-manager      # 停止服务
+sudo systemctl restart hysteria2-manager   # 重启服务
+sudo systemctl enable hysteria2-manager    # 启用自启动
+
+# 客户端服务
+sudo systemctl status hysteria2-client     # 检查状态
+sudo systemctl start hysteria2-client      # 启动客户端
+sudo systemctl stop hysteria2-client       # 停止客户端
+sudo systemctl restart hysteria2-client    # 重启客户端
+sudo systemctl enable hysteria2-client     # 启用自启动
+
+# 查看日志
+sudo journalctl -u hysteria2-manager -f    # 管理器日志
+sudo journalctl -u hysteria2-client -f     # 客户端日志
+```
+
+### 安装管理
+
+```bash
+# 更新
 bash install.sh update
 
-# Uninstall
+# 卸载
 bash install.sh uninstall
 
-# Force Reinstall
+# 强制重新安装
 bash install.sh force
 ```
 
-## 📡 API Documentation
+## 📡 API 文档
 
-### Authentication Endpoints
+### 认证端点
 
-#### Login
+#### 登录
 ```http
 POST /api/auth/login
 Content-Type: application/json
@@ -358,10 +358,10 @@ Content-Type: application/json
   "password": "admin"
 }
 
-Response:
+响应:
 {
   "success": true,
-  "message": "Login successful",
+  "message": "登录成功",
   "data": {
     "username": "admin",
     "role": "admin",
@@ -371,35 +371,35 @@ Response:
 }
 ```
 
-#### Logout
+#### 登出
 ```http
 POST /api/auth/logout
 
-Response:
+响应:
 {
   "success": true,
-  "message": "Logout successful"
+  "message": "登出成功"
 }
 ```
 
-#### Change Password
+#### 修改密码
 ```http
 POST /api/auth/change_password
 Content-Type: application/json
 
 {
-  "old_password": "current_password",
-  "new_password": "new_password"
+  "old_password": "当前密码",
+  "new_password": "新密码"
 }
 ```
 
-### Service Management
+### 服务管理
 
-#### Get Status
+#### 获取状态
 ```http
 GET /api/status
 
-Response:
+响应:
 {
   "success": true,
   "data": {
@@ -426,109 +426,109 @@ Response:
 }
 ```
 
-#### Service Control
+#### 服务控制
 ```http
-POST /api/service/start    # Start service
-POST /api/service/stop     # Stop service
-POST /api/service/restart  # Restart service
+POST /api/service/start    # 启动服务
+POST /api/service/stop     # 停止服务
+POST /api/service/restart  # 重启服务
 ```
 
-### Node Management
+### 节点管理
 
-#### Get Nodes
+#### 获取节点
 ```http
 GET /api/nodes
 
-Response:
+响应:
 {
   "success": true,
   "data": {
     "nodes": [...],
-    "current": "node_id"
+    "current": "节点ID"
   }
 }
 ```
 
-#### Add Node
+#### 添加节点
 ```http
 POST /api/nodes
 Content-Type: application/json
 
-# Method 1: URL Import
+# 方法1: URL导入
 {
-  "url": "hy2://password@server:port/?sni=domain",
-  "name": "Custom Name"
+  "url": "hy2://密码@服务器:端口/?sni=域名",
+  "name": "自定义名称"
 }
 
-# Method 2: Manual
+# 方法2: 手动配置
 {
-  "name": "Node Name",
-  "server": "server.com",
+  "name": "节点名称",
+  "server": "服务器.com",
   "port": 443,
-  "password": "password",
-  "sni": "server.com"
+  "password": "密码",
+  "sni": "服务器.com"
 }
 ```
 
-#### Use Node
+#### 使用节点
 ```http
 POST /api/nodes/:id/use
 ```
 
-#### Delete Node
+#### 删除节点
 ```http
 DELETE /api/nodes/:id
 ```
 
-### System Operations
+### 系统操作
 
-#### Get Logs
+#### 获取日志
 ```http
 GET /api/logs?lines=100&type=all
 ```
 
-#### Get System Stats
+#### 获取系统统计
 ```http
 GET /api/system/stats
 ```
 
-#### Test Connection
+#### 测试连接
 ```http
 GET /api/test
 ```
 
-## 🔧 Troubleshooting
+## 🔧 故障排查
 
-### Common Issues
+### 常见问题
 
-#### 1. Cannot Access WebUI
+#### 1. 无法访问WebUI
 
-**Problem:** Unable to connect to http://SERVER_IP:8080
+**问题：** 无法连接到 http://服务器IP:8080
 
-**Solutions:**
+**解决方案：**
 ```bash
-# Check service status
+# 检查服务状态
 sudo systemctl status hysteria2-manager
 
-# Check if port is listening
+# 检查端口监听
 netstat -tuln | grep 8080
 
-# Check firewall
+# 检查防火墙
 sudo ufw status
-sudo ufw allow 8080/tcp  # If using ufw
+sudo ufw allow 8080/tcp  # 如果使用ufw
 
-# For firewalld
+# 对于firewalld
 sudo firewall-cmd --add-port=8080/tcp --permanent
 sudo firewall-cmd --reload
 ```
 
-#### 2. Login Failed
+#### 2. 登录失败
 
-**Problem:** Cannot login with default credentials
+**问题：** 无法使用默认凭证登录
 
-**Solutions:**
+**解决方案：**
 ```bash
-# Reset to default password
+# 重置为默认密码
 sudo python3 << EOF
 import json
 from werkzeug.security import generate_password_hash
@@ -544,108 +544,108 @@ users['users'][0]['locked_until'] = None
 with open(users_file, 'w') as f:
     json.dump(users, f, indent=2)
 
-print("Password reset to: admin")
+print("密码已重置为: admin")
 EOF
 
-# Restart service
+# 重启服务
 sudo systemctl restart hysteria2-manager
 ```
 
-#### 3. Proxy Not Working
+#### 3. 代理无法工作
 
-**Problem:** Connected but no internet access
+**问题：** 已连接但无法访问互联网
 
-**Solutions:**
+**解决方案：**
 ```bash
-# Check Hysteria2 client status
+# 检查Hysteria2客户端状态
 sudo systemctl status hysteria2-client
 
-# Check TUN interface
+# 检查TUN接口
 ip link show hytun
 
-# Check routing
+# 检查路由
 ip route | grep hytun
 
-# View detailed logs
+# 查看详细日志
 sudo journalctl -u hysteria2-client -n 100
 
-# Test with manual config
+# 手动测试配置
 sudo /usr/local/bin/hysteria client -c /etc/hysteria2/client.yaml
 ```
 
-#### 4. High CPU/Memory Usage
+#### 4. 高CPU/内存占用
 
-**Solutions:**
+**解决方案：**
 ```bash
-# Check process usage
+# 检查进程使用
 htop
 
-# Clear logs
+# 清理日志
 sudo truncate -s 0 /var/log/hysteria2/*.log
 
-# Restart services
+# 重启服务
 sudo systemctl restart hysteria2-manager
 sudo systemctl restart hysteria2-client
 
-# Check for memory leaks
+# 检查内存泄漏
 ps aux | grep hysteria
 ```
 
-### Diagnostic Commands
+### 诊断命令
 
 ```bash
-# Complete system check
+# 完整系统检查
 cat > /tmp/diagnose.sh << 'EOF'
 #!/bin/bash
-echo "=== System Diagnosis ==="
-echo "1. Service Status:"
+echo "=== 系统诊断 ==="
+echo "1. 服务状态:"
 systemctl status hysteria2-manager --no-pager | head -10
 systemctl status hysteria2-client --no-pager | head -10
 
-echo -e "\n2. Port Status:"
+echo -e "\n2. 端口状态:"
 netstat -tuln | grep -E ":(8080|443)"
 
-echo -e "\n3. TUN Interface:"
-ip link show hytun 2>/dev/null || echo "TUN interface not found"
+echo -e "\n3. TUN接口:"
+ip link show hytun 2>/dev/null || echo "TUN接口未找到"
 
-echo -e "\n4. Current IP:"
-curl -s https://ifconfig.io || echo "Cannot fetch IP"
+echo -e "\n4. 当前IP:"
+curl -s https://ifconfig.io || echo "无法获取IP"
 
-echo -e "\n5. DNS Test:"
+echo -e "\n5. DNS测试:"
 nslookup google.com 8.8.8.8 | head -5
 
-echo -e "\n6. Resource Usage:"
+echo -e "\n6. 资源使用:"
 free -h
 df -h /
 
-echo -e "\n7. Recent Errors:"
+echo -e "\n7. 最近错误:"
 journalctl -p err --since "1 hour ago" | tail -20
 EOF
 
 bash /tmp/diagnose.sh
 ```
 
-## ❓ FAQ
+## ❓ 常见问题
 
-### Q1: How to change the web port?
+### Q1: 如何更改Web端口？
 
-**A:** Edit the configuration file:
+**答：** 编辑配置文件：
 ```bash
-# Edit config
+# 编辑配置
 sudo nano /opt/hysteria2-manager/data/config.json
-# Change "web_port": 8080 to your desired port
+# 将 "web_port": 8080 改为您需要的端口
 
-# Restart service
+# 重启服务
 sudo systemctl restart hysteria2-manager
 ```
 
-### Q2: How to enable HTTPS?
+### Q2: 如何启用HTTPS？
 
-**A:** Use a reverse proxy like Nginx:
+**答：** 使用Nginx反向代理：
 ```nginx
 server {
     listen 443 ssl;
-    server_name your-domain.com;
+    server_name 您的域名.com;
     
     ssl_certificate /path/to/cert.pem;
     ssl_certificate_key /path/to/key.pem;
@@ -658,125 +658,203 @@ server {
 }
 ```
 
-### Q3: How to backup configuration?
+### Q3: 如何备份配置？
 
-**A:** Backup all configuration files:
+**答：** 备份所有配置文件：
 ```bash
-# Create backup
+# 创建备份
 tar -czf hysteria2-backup-$(date +%Y%m%d).tar.gz \
     /opt/hysteria2-manager/data/ \
     /etc/hysteria2/
 
-# Restore backup
+# 恢复备份
 tar -xzf hysteria2-backup-20240120.tar.gz -C /
 ```
 
-### Q4: How to migrate to another server?
+### Q4: 如何迁移到另一台服务器？
 
-**A:** Follow these steps:
+**答：** 按以下步骤操作：
 ```bash
-# On old server - Export
+# 在旧服务器 - 导出
 tar -czf hysteria2-migrate.tar.gz \
     /opt/hysteria2-manager/ \
     /etc/hysteria2/
 
-# On new server - Import
-scp user@old-server:~/hysteria2-migrate.tar.gz .
+# 在新服务器 - 导入
+scp user@旧服务器:~/hysteria2-migrate.tar.gz .
 tar -xzf hysteria2-migrate.tar.gz -C /
-bash install.sh  # Run installer to set up services
+bash install.sh  # 运行安装程序设置服务
 ```
 
-### Q5: How to use multiple users?
+### Q5: 如何使用多用户？
 
-**A:** Currently supports single admin user. Multi-user support is planned for future releases.
+**答：** 目前只支持单个管理员用户。多用户支持计划在未来版本中加入。
 
-## 📝 Changelog
+### Q6: 如何查看实时流量？
+
+**答：** 仪表板会自动每5秒更新一次流量统计。您也可以使用命令行：
+```bash
+# 实时流量监控
+watch -n 1 'ip -s link show hytun'
+```
+
+### Q7: 节点链接格式有哪些？
+
+**答：** 支持以下格式：
+- `hy2://` - Hysteria2标准格式
+- `hysteria2://` - 完整格式
+- `hysteria://` - 兼容格式
+
+参数支持：
+- `sni` - 服务器名称指示
+- `insecure` - 跳过证书验证
+- `obfs` - 混淆类型
+- `obfs-password` - 混淆密码
+- `alpn` - ALPN协议
+- `up/down` - 带宽限制
+
+### Q8: 如何优化性能？
+
+**答：** 系统已自动优化，额外优化：
+```bash
+# 增加文件描述符限制
+ulimit -n 65535
+
+# 优化TCP参数
+echo "net.ipv4.tcp_congestion_control = bbr" >> /etc/sysctl.conf
+sysctl -p
+
+# 使用更快的DNS
+echo "nameserver 1.1.1.1" > /etc/resolv.conf
+```
+
+## 📝 更新日志
 
 ### v2.0.0 (2024-01-20)
-- 🔐 **New:** Complete authentication system
-- 🎨 **New:** Modern tech-style UI with dark theme
-- 🔧 **New:** RESTful API with session management
-- ✅ **Fixed:** All known v1.0 issues
-- ✅ **Fixed:** URL parsing for all formats
-- ✅ **Fixed:** Connection status detection
-- ✅ **Fixed:** DNS test reliability
-- ✅ **Fixed:** Log viewing functionality
-- ✅ **Fixed:** System resource monitoring
-- 📦 **Improved:** Installation process
-- 📊 **Improved:** Real-time statistics
-- 🛡️ **Improved:** Security features
+- 🔐 **新增：** 完整的认证系统
+- 🎨 **新增：** 现代科技风格UI，深色主题
+- 🔧 **新增：** RESTful API带会话管理
+- ✅ **修复：** 所有已知v1.0问题
+- ✅ **修复：** URL解析支持所有格式
+- ✅ **修复：** 连接状态检测
+- ✅ **修复：** DNS测试可靠性
+- ✅ **修复：** 日志查看功能
+- ✅ **修复：** 系统资源监控
+- 📦 **改进：** 安装流程
+- 📊 **改进：** 实时统计
+- 🛡️ **改进：** 安全特性
 
 ### v1.0.0 (2024-01-15)
-- 🎉 Initial release
-- ✨ Basic functionality
-- 🎨 Web UI interface
-- 📦 One-click installation
+- 🎉 初始版本发布
+- ✨ 基础功能实现
+- 🎨 Web UI界面
+- 📦 一键安装脚本
 
-### Roadmap
+### 开发路线图
 
-- [ ] v2.1.0 - Multi-user support
-- [ ] v2.2.0 - Docker container support
-- [ ] v2.3.0 - Subscription management
-- [ ] v2.4.0 - Traffic statistics & limits
-- [ ] v3.0.0 - Mobile app
+- [ ] v2.1.0 - 多用户支持
+- [ ] v2.2.0 - Docker容器支持
+- [ ] v2.3.0 - 订阅管理
+- [ ] v2.4.0 - 流量统计和限制
+- [ ] v2.5.0 - 规则路由
+- [ ] v3.0.0 - 移动端APP
 
-## 🤝 Contributing
+## 🤝 开发说明
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
-
-### Development Setup
+### 开发环境设置
 
 ```bash
-# Clone repository
+# 克隆仓库
 git clone https://github.com/yourusername/hysteria2-manager.git
 cd hysteria2-manager
 
-# Create virtual environment
+# 创建虚拟环境
 python3 -m venv venv
 source venv/bin/activate
 
-# Install dependencies
-pip install -r requirements.txt
+# 安装依赖
+pip install flask flask-cors psutil pyyaml requests bcrypt
 
-# Run in debug mode
-python hysteria2_manager.py --debug
+# 调试模式运行
+export HY2_MANAGER_DEBUG=true
+python hysteria2_manager.py
 ```
 
-### Submitting Issues
+### 项目结构
 
-Please include:
-- System information (OS, Python version)
-- Error logs
-- Steps to reproduce
-- Expected vs actual behavior
+```
+hysteria2-manager/
+├── install.sh                    # 安装脚本
+├── hysteria2_manager.py          # 核心程序
+├── static/
+│   └── dashboard.html            # Web界面
+├── data/                         # 数据目录
+│   ├── config.json              # 系统配置
+│   ├── nodes.json               # 节点数据
+│   └── users.json               # 用户数据
+├── system/                       # 系统文件
+│   ├── hysteria2-manager.service # systemd服务文件
+│   └── hysteria2-client.service  # 客户端服务文件
+├── docs/                         # 文档
+│   ├── API.md                   # API文档
+│   └── DEVELOPMENT.md           # 开发文档
+├── tests/                        # 测试
+│   └── test_manager.py          # 单元测试
+├── requirements.txt              # Python依赖
+├── LICENSE                       # 许可证
+└── README.md                     # 说明文档
+```
 
-## 📄 License
+### 贡献指南
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+1. Fork 项目
+2. 创建功能分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 开启 Pull Request
 
-## 🙏 Acknowledgments
+### 提交问题
 
-- [Hysteria2](https://github.com/apernet/hysteria) - The powerful proxy core
-- [Flask](https://flask.palletsprojects.com/) - Python web framework
-- [Vue.js](https://vuejs.org/) - Frontend framework
-- [Chart.js](https://www.chartjs.org/) - Data visualization
-- All contributors and users
+请包含以下信息：
+- 系统信息（操作系统、Python版本）
+- 错误日志
+- 重现步骤
+- 预期行为 vs 实际行为
 
-## 📞 Contact
+## 📄 许可证
 
-- **GitHub Issues:** [Report bugs](https://github.com/yourusername/hysteria2-manager/issues)
-- **Discussions:** [Ask questions](https://github.com/yourusername/hysteria2-manager/discussions)
-- **Email:** admin@example.com
+本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情
+
+## 🙏 致谢
+
+- [Hysteria2](https://github.com/apernet/hysteria) - 强大的代理核心
+- [Flask](https://flask.palletsprojects.com/) - Python Web框架
+- [Vue.js](https://vuejs.org/) - 前端框架
+- [Chart.js](https://www.chartjs.org/) - 数据可视化
+- 所有贡献者和用户
+
+## 📞 联系方式
+
+- **GitHub Issues：** [报告问题](https://github.com/yourusername/hysteria2-manager/issues)
+- **Discussions：** [提问讨论](https://github.com/yourusername/hysteria2-manager/discussions)
+- **邮箱：** admin@example.com
+- **Telegram：** [@hysteria2manager](https://t.me/hysteria2manager)
+
+## 🌟 Star历史
+
+[![Star History Chart](https://api.star-history.com/svg?repos=yourusername/hysteria2-manager&type=Date)](https://star-history.com/#yourusername/hysteria2-manager&Date)
 
 ---
 
 <div align="center">
 
-**If this project helps you, please give it a ⭐ Star!**
+**如果这个项目对您有帮助，请给一个 ⭐ Star！**
 
-[![Star History](https://star-history.com/#yourusername/hysteria2-manager&Date)](https://star-history.com/#yourusername/hysteria2-manager)
+[![GitHub Stars](https://img.shields.io/github/stars/yourusername/hysteria2-manager?style=social)](https://github.com/yourusername/hysteria2-manager)
+[![GitHub Forks](https://img.shields.io/github/forks/yourusername/hysteria2-manager?style=social)](https://github.com/yourusername/hysteria2-manager/fork)
+[![GitHub Issues](https://img.shields.io/github/issues/yourusername/hysteria2-manager)](https://github.com/yourusername/hysteria2-manager/issues)
+[![GitHub License](https://img.shields.io/github/license/yourusername/hysteria2-manager)](https://github.com/yourusername/hysteria2-manager/blob/main/LICENSE)
 
-[Back to Top](#hysteria2-manager-v20)
+[返回顶部](#hysteria2-manager-v20)
 
 </div>
-```
