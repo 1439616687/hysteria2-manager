@@ -401,7 +401,7 @@ set -e
 echo "Installing Hysteria2 Manager..."
 
 # Download and run main installer
-wget -O /tmp/install.sh https://raw.githubusercontent.com/yourusername/hysteria2-manager/main/install.sh
+wget -O /tmp/install.sh https://raw.githubusercontent.com/1439616687/hysteria2-manager/main/install.sh
 chmod +x /tmp/install.sh
 sudo bash /tmp/install.sh
 
