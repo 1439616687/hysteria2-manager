@@ -1,113 +1,218 @@
+# ==================== hysteria2-manager.service ====================
+# Hysteria2 Manager WebUI Service
+# Location: /etc/systemd/system/hysteria2-manager.service
+# Description: Manages the web interface and API for Hysteria2 proxy
+
 [Unit]
-Description=Hysteria2 Manager WebUI Service
-Documentation=https://github.com/1439616687/hysteria2-manager
+Description=Hysteria2 Manager - Web Management Interface
+Documentation=https://github.com/yourusername/hysteria2-manager
 After=network-online.target
 Wants=network-online.target systemd-networkd-wait-online.service
 
-# 依赖检查
-ConditionPathExists=/opt/hysteria2-manager/hysteria2_manager.py
-ConditionPathExists=/opt/hysteria2-manager/data/config.json
+# Dependencies
+Requires=network.target
 
 [Service]
-# 服务类型
+# Service Type
 Type=simple
-Restart=always
-RestartSec=10
 
-# 用户和权限
+# User and Group
 User=root
 Group=root
 
-# 工作目录
+# Working Directory
 WorkingDirectory=/opt/hysteria2-manager
 
-# 环境变量
+# Environment Variables
 Environment="PATH=/opt/hysteria2-manager/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 Environment="PYTHONPATH=/opt/hysteria2-manager"
 Environment="PYTHONUNBUFFERED=1"
 Environment="LANG=en_US.UTF-8"
 Environment="LC_ALL=en_US.UTF-8"
 
-# 启动前检查
-ExecStartPre=/bin/bash -c 'test -f /opt/hysteria2-manager/data/config.json || exit 1'
-ExecStartPre=/bin/bash -c 'test -f /opt/hysteria2-manager/data/nodes.json || exit 1'
-ExecStartPre=/bin/bash -c 'test -f /opt/hysteria2-manager/data/users.json || exit 1'
-ExecStartPre=/bin/bash -c '/opt/hysteria2-manager/venv/bin/python --version || exit 1'
+# Pre-start checks
+ExecStartPre=/bin/bash -c 'if [ ! -d /opt/hysteria2-manager ]; then echo "Installation directory not found"; exit 1; fi'
+ExecStartPre=/bin/bash -c 'if [ ! -f /opt/hysteria2-manager/data/config.json ]; then echo "Configuration file not found"; exit 1; fi'
+ExecStartPre=/bin/bash -c 'if [ ! -f /opt/hysteria2-manager/venv/bin/python ]; then echo "Python virtual environment not found"; exit 1; fi'
 
-# 主进程启动命令
+# Start Command
 ExecStart=/opt/hysteria2-manager/venv/bin/python /opt/hysteria2-manager/hysteria2_manager.py
 
-# 停止命令
-ExecStop=/bin/kill -TERM $MAINPID
-ExecStopPost=/bin/rm -f /var/run/hysteria2-manager.pid
-
-# 重载命令
-ExecReload=/bin/kill -HUP $MAINPID
-
-# 进程管理
-KillMode=mixed
-KillSignal=SIGTERM
-TimeoutStartSec=30
-TimeoutStopSec=10
-
-# 重启策略
+# Restart Policy
+Restart=always
+RestartSec=10
 StartLimitInterval=120
 StartLimitBurst=5
 
-# 资源限制
+# Process Management
+KillMode=mixed
+KillSignal=SIGTERM
+SendSIGKILL=yes
+TimeoutStartSec=30
+TimeoutStopSec=10
+
+# Resource Limits
 LimitNOFILE=65535
 LimitNPROC=4096
-LimitCORE=infinity
-TasksMax=4096
+LimitCORE=0
+# Memory limit (optional, adjust as needed)
+# MemoryLimit=256M
+# MemoryAccounting=true
+# CPUQuota=50%
 
-# 内存管理
-MemoryMax=512M
-MemorySwapMax=0
-
-# CPU管理
-CPUWeight=100
-CPUQuota=50%
-
-# 安全设置
+# Security Settings
 NoNewPrivileges=false
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=true
-ProtectKernelTunables=true
-ProtectKernelModules=true
-ProtectControlGroups=true
-RestrictRealtime=true
-RestrictNamespaces=false
-LockPersonality=true
-RemoveIPC=true
-RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
-SystemCallFilter=@system-service
-SystemCallErrorNumber=EPERM
+ReadWritePaths=/opt/hysteria2-manager/data /var/log/hysteria2
+# ProtectKernelTunables=true
+# ProtectKernelModules=true
+# ProtectControlGroups=true
+# RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+# RestrictNamespaces=true
+# RestrictRealtime=true
+# SystemCallFilter=@system-service
 
-# 文件系统权限
-ReadWritePaths=/opt/hysteria2-manager/data
-ReadWritePaths=/var/log/hysteria2
-ReadWritePaths=/etc/hysteria2
-ReadOnlyPaths=/opt/hysteria2-manager/venv
-ReadOnlyPaths=/opt/hysteria2-manager/static
-
-# 设备访问
-PrivateDevices=true
-DevicePolicy=closed
-
-# 日志设置
+# Logging
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=hysteria2-manager
-LogLevelMax=info
 
-# 环境文件（可选）
-EnvironmentFile=-/etc/default/hysteria2-manager
+# Performance Tuning
+Nice=-5
+IOSchedulingClass=best-effort
+IOSchedulingPriority=4
 
-# 监控和健康检查
-WatchdogSec=60
-NotifyAccess=main
+# Health Check (optional)
+# Watchdog=30s
+# WatchdogSec=30s
 
 [Install]
 WantedBy=multi-user.target
-Alias=hy2-manager.service
+
+# ==================== hysteria2-client.service ====================
+# Hysteria2 Client Service
+# Location: /etc/systemd/system/hysteria2-client.service
+# Description: Hysteria2 proxy client that creates TUN interface
+
+[Unit]
+Description=Hysteria2 Client - Proxy Connection Service
+Documentation=https://v2.hysteria.network/
+Documentation=https://github.com/apernet/hysteria
+After=network-online.target nss-lookup.target
+Wants=network-online.target
+
+# Dependency on manager service
+BindsTo=hysteria2-manager.service
+After=hysteria2-manager.service
+
+# Network requirements
+Requires=network.target
+After=network.target
+
+[Service]
+# Service Type
+Type=simple
+
+# User and Group (requires root for TUN device)
+User=root
+Group=root
+
+# Working Directory
+WorkingDirectory=/etc/hysteria2
+
+# Environment Variables
+Environment="PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+Environment="LANG=en_US.UTF-8"
+Environment="LC_ALL=en_US.UTF-8"
+
+# Pre-start Operations
+# Clean up any existing TUN interface
+ExecStartPre=-/usr/sbin/ip link delete hytun 2>/dev/null
+# Wait for network to be fully ready
+ExecStartPre=/bin/sleep 2
+# Verify configuration file exists
+ExecStartPre=/bin/bash -c 'if [ ! -f /etc/hysteria2/client.yaml ]; then echo "Client configuration not found. Please select a node first."; exit 1; fi'
+# Test configuration (optional, comment out if causes issues)
+# ExecStartPre=/usr/local/bin/hysteria client -c /etc/hysteria2/client.yaml --test
+
+# Main Process
+ExecStart=/usr/local/bin/hysteria client -c /etc/hysteria2/client.yaml
+
+# Post-stop Operations
+# Clean up TUN interface
+ExecStopPost=-/usr/sbin/ip link delete hytun 2>/dev/null
+# Flush route cache
+ExecStopPost=-/bin/bash -c 'ip route flush cache'
+# Optional: Clear iptables rules
+# ExecStopPost=-/bin/bash -c 'iptables -t nat -F'
+
+# Restart Policy
+Restart=on-failure
+RestartSec=10
+StartLimitInterval=120
+StartLimitBurst=5
+
+# Process Management
+KillMode=mixed
+KillSignal=SIGTERM
+SendSIGKILL=yes
+TimeoutStartSec=30
+TimeoutStopSec=10
+
+# Resource Limits
+LimitNOFILE=1048576
+LimitNPROC=512
+LimitCORE=0
+# Memory limit (optional)
+# MemoryLimit=512M
+# MemoryAccounting=true
+# CPUQuota=80%
+
+# Network Capabilities (IMPORTANT!)
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_RAW CAP_NET_BIND_SERVICE CAP_SYS_PTRACE CAP_DAC_READ_SEARCH
+AmbientCapabilities=CAP_NET_ADMIN CAP_NET_RAW CAP_NET_BIND_SERVICE
+
+# Security Settings
+NoNewPrivileges=false
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/etc/hysteria2 /var/log/hysteria2
+# Allow access to /dev/net/tun device
+PrivateDevices=no
+DeviceAllow=/dev/net/tun rw
+# ProtectKernelTunables=false  # Need to modify network settings
+# ProtectKernelModules=false   # Need to load TUN module
+# RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK AF_PACKET
+# SystemCallFilter=@system-service @network-io @privileged
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=hysteria2-client
+
+# Performance Tuning
+Nice=-10
+CPUSchedulingPolicy=other
+CPUSchedulingPriority=0
+IOSchedulingClass=best-effort
+IOSchedulingPriority=2
+
+# Network Settings
+# Allow binding to privileged ports
+# PrivateNetwork=no
+# IPAddressDeny=
+# IPAddressAllow=any
+
+# Environment Checks (optional)
+# AssertPathExists=/usr/local/bin/hysteria
+# AssertPathExists=/etc/hysteria2
+# AssertFileNotEmpty=/etc/hysteria2/client.yaml
+# AssertCapability=CAP_NET_ADMIN
+
+[Install]
+WantedBy=multi-user.target
+# Also start when manager starts
+# WantedBy=hysteria2-manager.service
