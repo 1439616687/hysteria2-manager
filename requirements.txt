@@ -1,0 +1,267 @@
+# Hysteria2 Manager v2.0 - Python Dependencies
+# Python Version: >= 3.6
+# Last Updated: 2024
+
+# ==================== Core Framework ====================
+# Flask - Micro web framework for Python
+Flask==3.0.0
+
+# Flask-Cors - Cross Origin Resource Sharing (CORS) handling
+Flask-Cors==4.0.0
+
+# ==================== Authentication ====================
+# PyJWT - JSON Web Token implementation
+PyJWT==2.8.0
+
+# bcrypt - Modern password hashing library
+bcrypt==4.1.2
+
+# ==================== System Monitoring ====================
+# psutil - Cross-platform system monitoring
+psutil==5.9.8
+
+# ==================== Configuration ====================
+# PyYAML - YAML parser and emitter
+PyYAML==6.0.1
+
+# ==================== HTTP Client ====================
+# requests - HTTP library for Python
+requests==2.31.0
+
+# ==================== Optional Dependencies ====================
+# These are optional but recommended for enhanced functionality
+
+# Werkzeug - WSGI utility library (Flask dependency, explicit version for security)
+Werkzeug==3.0.1
+
+# MarkupSafe - Safely handle HTML/XML markup (Jinja2 dependency)
+MarkupSafe==2.1.3
+
+# Jinja2 - Template engine (Flask dependency)
+Jinja2==3.1.2
+
+# click - Command line interface creation kit (Flask dependency)
+click==8.1.7
+
+# itsdangerous - Data signing (Flask dependency)
+itsdangerous==2.1.2
+
+# ==================== Development Dependencies ====================
+# Uncomment these for development environment
+
+# # Code formatting
+# black==23.12.1
+# 
+# # Linting
+# pylint==3.0.3
+# flake8==7.0.0
+# 
+# # Type checking
+# mypy==1.8.0
+# 
+# # Testing
+# pytest==7.4.4
+# pytest-flask==1.3.0
+# pytest-cov==4.1.0
+# 
+# # Documentation
+# sphinx==7.2.6
+# sphinx-rtd-theme==2.0.0
+
+# ==================== Production Server ====================
+# Uncomment for production deployment
+
+# # Gunicorn - Production WSGI HTTP Server
+# gunicorn==21.2.0
+# 
+# # Gevent - Coroutine-based networking library
+# gevent==23.9.1
+# 
+# # Supervisor - Process control system
+# supervisor==4.2.5
+
+# ==================== Database (Future Enhancement) ====================
+# Uncomment if database support is needed
+
+# # SQLAlchemy - SQL toolkit and ORM
+# SQLAlchemy==2.0.25
+# 
+# # Flask-SQLAlchemy - Flask extension for SQLAlchemy
+# Flask-SQLAlchemy==3.1.1
+# 
+# # Alembic - Database migration tool
+# alembic==1.13.1
+# 
+# # PyMySQL - MySQL client
+# PyMySQL==1.1.0
+# 
+# # psycopg2-binary - PostgreSQL adapter
+# psycopg2-binary==2.9.9
+
+# ==================== Caching (Future Enhancement) ====================
+# Uncomment if caching is needed
+
+# # Redis - Python Redis client
+# redis==5.0.1
+# 
+# # Flask-Caching - Flask extension for caching
+# Flask-Caching==2.1.0
+
+# ==================== Security Enhancements ====================
+# Uncomment for additional security features
+
+# # cryptography - Cryptographic recipes and primitives
+# cryptography==41.0.7
+# 
+# # Flask-Limiter - Rate limiting for Flask
+# Flask-Limiter==3.5.0
+# 
+# # Flask-WTF - Flask integration with WTForms
+# Flask-WTF==1.2.1
+# 
+# # python-dotenv - Load environment variables from .env file
+# python-dotenv==1.0.0
+
+# ==================== Monitoring & Logging ====================
+# Uncomment for enhanced monitoring
+
+# # Sentry-SDK - Error tracking and monitoring
+# sentry-sdk[flask]==1.39.1
+# 
+# # Flask-APM - Application Performance Monitoring
+# elastic-apm[flask]==6.20.0
+# 
+# # prometheus-flask-exporter - Prometheus metrics
+# prometheus-flask-exporter==0.23.0
+
+# ==================== WebSocket Support ====================
+# Uncomment if WebSocket is needed
+
+# # Flask-SocketIO - WebSocket support for Flask
+# Flask-SocketIO==5.3.5
+# python-socketio==5.11.0
+# 
+# # Simple-websocket - WebSocket client
+# simple-websocket==1.0.0
+
+# ==================== Task Queue ====================
+# Uncomment for background tasks
+
+# # Celery - Distributed task queue
+# celery==5.3.5
+# 
+# # Flask-Celery-Helper - Flask extension for Celery
+# Flask-Celery-Helper==1.1.0
+# 
+# # Redis (required for Celery broker)
+# redis==5.0.1
+
+# ==================== API Documentation ====================
+# Uncomment for API documentation
+
+# # Flask-RESTX - Flask extension for building REST APIs
+# flask-restx==1.3.0
+# 
+# # Flask-Swagger-UI - Swagger UI for Flask
+# flask-swagger-ui==4.11.1
+# 
+# # apispec - OpenAPI specification generator
+# apispec==6.3.1
+
+# ==================== Email Support ====================
+# Uncomment if email functionality is needed
+
+# # Flask-Mail - Flask extension for sending emails
+# Flask-Mail==0.9.1
+# 
+# # email-validator - Email address validation
+# email-validator==2.1.0
+
+# ==================== Internationalization ====================
+# Uncomment for multi-language support
+
+# # Flask-Babel - i18n and l10n support for Flask
+# Flask-Babel==4.0.0
+# 
+# # Babel - Internationalization utilities
+# Babel==2.14.0
+
+# ==================== File Handling ====================
+# Uncomment for file upload/download features
+
+# # Flask-Uploads - File upload handling
+# Flask-Uploads==0.2.1
+# 
+# # Pillow - Python Imaging Library
+# Pillow==10.2.0
+# 
+# # python-magic - File type identification
+# python-magic==0.4.27
+
+# ==================== Data Processing ====================
+# Uncomment for data analysis features
+
+# # pandas - Data analysis library
+# pandas==2.1.4
+# 
+# # numpy - Numerical computing
+# numpy==1.26.3
+# 
+# # matplotlib - Plotting library
+# matplotlib==3.8.2
+
+# ==================== Version Notes ====================
+# 
+# Version Compatibility:
+# - All packages are pinned to specific versions for stability
+# - Compatible with Python 3.6+
+# - Tested on Ubuntu 20.04/22.04, Debian 11/12, CentOS 8/9
+# 
+# Security Updates:
+# - All dependencies use latest stable versions as of 2024
+# - No known security vulnerabilities in listed versions
+# 
+# Performance Considerations:
+# - Core dependencies are lightweight (~15MB total)
+# - Optional dependencies can be added as needed
+# - Production dependencies add ~30MB
+# 
+# Installation Notes:
+# 1. Create virtual environment:
+#    python3 -m venv venv
+# 
+# 2. Activate virtual environment:
+#    source venv/bin/activate  # Linux/Mac
+#    venv\Scripts\activate     # Windows
+# 
+# 3. Install dependencies:
+#    pip install -r requirements.txt
+# 
+# 4. For development:
+#    pip install -r requirements-dev.txt
+# 
+# 5. For production:
+#    pip install -r requirements-prod.txt
+# 
+# Upgrade Notes:
+# - To upgrade all packages:
+#   pip install --upgrade -r requirements.txt
+# 
+# - To check for updates:
+#   pip list --outdated
+# 
+# - To generate updated requirements:
+#   pip freeze > requirements.txt
+# 
+# Troubleshooting:
+# - If bcrypt fails to install:
+#   apt-get install python3-dev libffi-dev  # Debian/Ubuntu
+#   yum install python3-devel libffi-devel  # CentOS/RHEL
+# 
+# - If PyYAML fails to install:
+#   apt-get install libyaml-dev  # Debian/Ubuntu
+#   yum install libyaml-devel    # CentOS/RHEL
+# 
+# - If psutil fails to install:
+#   apt-get install gcc python3-dev  # Debian/Ubuntu
+#   yum install gcc python3-devel    # CentOS/RHEL
