@@ -130,7 +130,7 @@ Hysteria2 Manager 是一个基于 Web 的 Hysteria2 代理管理系统，提供�
 
 ```bash
 # 下载安装脚本
-wget -O install.sh https://raw.githubusercontent.com/yourusername/hysteria2-manager/main/install.sh
+wget -O install.sh https://raw.githubusercontent.com/1439616687/hysteria2-manager/main/install.sh
 
 # 赋予执行权限
 chmod +x install.sh
@@ -143,7 +143,7 @@ sudo bash install.sh
 
 ```bash
 # 1. 克隆仓库
-git clone https://github.com/yourusername/hysteria2-manager.git
+git clone https://github.com/1439616687/hysteria2-manager.git
 cd hysteria2-manager
 
 # 2. 执行安装
@@ -157,7 +157,7 @@ sudo systemctl start hysteria2-manager
 
 ```bash
 # 拉取镜像
-docker pull yourusername/hysteria2-manager:latest
+docker pull 1439616687/hysteria2-manager:latest
 
 # 运行容器
 docker run -d \
@@ -166,7 +166,7 @@ docker run -d \
   --network host \
   --cap-add NET_ADMIN \
   -v /opt/hysteria2-data:/data \
-  yourusername/hysteria2-manager:latest
+  1439616687/hysteria2-manager:latest
 ```
 
 ### 安装验证
@@ -971,7 +971,7 @@ tar -czf $backup_dir/backup-$(date +%Y%m%d).tar.gz \
 
 ```bash
 # 克隆仓库
-git clone https://github.com/yourusername/hysteria2-manager.git
+git clone https://github.com/1439616687/hysteria2-manager.git
 cd hysteria2-manager
 
 # 创建虚拟环境
@@ -1029,7 +1029,7 @@ SOFTWARE.
 
 ## 📞 联系支持
 
-- **GitHub Issues**: [提交问题](https://github.com/yourusername/hysteria2-manager/issues)
+- **GitHub Issues**: [提交问题](https://github.com/1439616687/hysteria2-manager/issues)
 - **Email**: support@example.com
 - **Telegram**: [@hysteria2manager](https://t.me/hysteria2manager)
 - **文档**: [在线文档](https://docs.example.com)
@@ -1040,7 +1040,7 @@ SOFTWARE.
 
 **如果这个项目对您有帮助，请给一个 ⭐ Star！**
 
-[![Star History Chart](https://api.star-history.com/svg?repos=yourusername/hysteria2-manager&type=Date)](https://star-history.com/#yourusername/hysteria2-manager)
+[![Star History Chart](https://api.star-history.com/svg?repos=1439616687/hysteria2-manager&type=Date)](https://star-history.com/#1439616687/hysteria2-manager)
 
 Made with ❤️ by Hysteria2 Manager Team
 
