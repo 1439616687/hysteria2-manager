@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hysteria2 管理面板</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .nav-menu {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+        
+        .nav-menu a {
+            color: #333;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+        
+        .nav-menu a:hover, .nav-menu a.active {
+            background: #f0f0f0;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+            flex: 1;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ccc;
+        }
+        
+        .status-indicator.active {
+            background: #4ade80;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-indicator.inactive {
+            background: #f87171;
+        }
+        
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(74, 222, 128, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(74, 222, 128, 0);
+            }
+        }
+        
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 0.5rem 0;
+        }
+        
+        .stat-label {
+            color: #666;
+        }
+        
+        .stat-value {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .control-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 5px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5a67d8;
+            transform: translateY(-1px);
+        }
+        
+        .btn-success {
+            background: #4ade80;
+            color: white;
+        }
+        
+        .btn-danger {
+            background: #f87171;
+            color: white;
+        }
+        
+        .btn-warning {
+            background: #fbbf24;
+            color: white;
+        }
+        
+        .quick-connect {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .input-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .input-group input {
+            flex: 1;
+            padding: 0.75rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+        
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(to right, #667eea, #764ba2);
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+        
+        .alert {
+            padding: 1rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+        
+        .alert.show {
+            display: block;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">🚀 Hysteria2 Manager</div>
+            <nav>
+                <ul class="nav-menu">
+                    <li><a href="/" class="active">仪表板</a></li>
+                    <li><a href="/config">配置管理</a></li>
+                    <li><a href="/logs">系统日志</a></li>
+                    <li><a href="/logout">退出</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container">
+        <div id="alert" class="alert"></div>
+        
+        <!-- 快速连接 -->
+        <div class="quick-connect">
+            <h2>快速连接</h2>
+            <div class="input-group">
+                <input type="text" id="nodeUrl" placeholder="粘贴节点链接 (hy2://... 或 hysteria2://...)">
+                <button class="btn btn-primary" onclick="quickConnect()">一键连接</button>
+            </div>
+        </div>
+
+        <!-- 仪表板 -->
+        <div class="dashboard">
+            <!-- 服务状态 -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">服务状态</h3>
+                    <div class="status-indicator" id="serviceStatus"></div>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Hysteria2 服务</span>
+                    <span class="stat-value" id="hysteriaStatus">检测中...</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">TUN 接口</span>
+                    <span class="stat-value" id="tunStatus">检测中...</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">出口 IP</span>
+                    <span class="stat-value" id="exitIP">检测中...</span>
+                </div>
+                <div class="control-buttons">
+                    <button class="btn btn-success" onclick="controlService('start')">启动</button>
+                    <button class="btn btn-danger" onclick="controlService('stop')">停止</button>
+                    <button class="btn btn-warning" onclick="controlService('restart')">重启</button>
+                </div>
+            </div>
+
+            <!-- 系统资源 -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">系统资源</h3>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">CPU 使用率</span>
+                    <span class="stat-value" id="cpuUsage">0%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="cpuBar" style="width: 0%"></div>
+                </div>
+                
+                <div class="stat-item" style="margin-top: 1rem">
+                    <span class="stat-label">内存使用</span>
+                    <span class="stat-value" id="memoryUsage">0 MB</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="memoryBar" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- 网络流量 -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">网络流量</h3>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">上传总量</span>
+                    <span class="stat-value" id="uploadTotal">0 MB</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">下载总量</span>
+                    <span class="stat-value" id="downloadTotal">0 MB</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">系统运行时间</span>
+                    <span class="stat-value" id="uptime">-</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 更新状态
+        function updateStatus() {
+            fetch('/api/status')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const status = data.data;
+                        
+                        // 更新服务状态
+                        const serviceIndicator = document.getElementById('serviceStatus');
+                        const hysteriaStatus = document.getElementById('hysteriaStatus');
+                        
+                        if (status.hysteria.status) {
+                            serviceIndicator.className = 'status-indicator active';
+                            hysteriaStatus.textContent = '运行中';
+                            hysteriaStatus.style.color = '#4ade80';
+                        } else {
+                            serviceIndicator.className = 'status-indicator inactive';
+                            hysteriaStatus.textContent = '已停止';
+                            hysteriaStatus.style.color = '#f87171';
+                        }
+                        
+                        // 更新TUN状态
+                        document.getElementById('tunStatus').textContent = 
+                            status.hysteria.tun_interface ? '已启用' : '未启用';
+                        
+                        // 更新出口IP
+                        document.getElementById('exitIP').textContent = status.hysteria.exit_ip;
+                        
+                        // 更新系统资源
+                        const cpuPercent = status.system.cpu_percent;
+                        const memoryPercent = status.system.memory_percent;
+                        
+                        document.getElementById('cpuUsage').textContent = cpuPercent + '%';
+                        document.getElementById('cpuBar').style.width = cpuPercent + '%';
+                        
+                        document.getElementById('memoryUsage').textContent = 
+                            status.system.memory_used + ' MB / ' + status.system.memory_total + ' MB';
+                        document.getElementById('memoryBar').style.width = memoryPercent + '%';
+                        
+                        // 更新网络流量
+                        document.getElementById('uploadTotal').textContent = status.system.network_sent + ' MB';
+                        document.getElementById('downloadTotal').textContent = status.system.network_recv + ' MB';
+                        document.getElementById('uptime').textContent = status.system.uptime;
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+        
+        // 控制服务
+        function controlService(action) {
+            fetch(`/api/service/${action}`)
+                .then(response => response.json())
+                .then(data => {
+                    showAlert(data.success ? 'success' : 'error', data.message || data.error);
+                    setTimeout(updateStatus, 2000);
+                })
+                .catch(error => {
+                    showAlert('error', '操作失败: ' + error);
+                });
+        }
+        
+        // 快速连接
+        function quickConnect() {
+            const nodeUrl = document.getElementById('nodeUrl').value.trim();
+            if (!nodeUrl) {
+                showAlert('error', '请输入节点链接');
+                return;
+            }
+            
+            fetch('/api/config', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ node_url: nodeUrl })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('success', '配置已保存，正在重启服务...');
+                    controlService('restart');
+                } else {
+                    showAlert('error', '配置失败: ' + data.error);
+                }
+            })
+            .catch(error => {
+                showAlert('error', '连接失败: ' + error);
+            });
+        }
+        
+        // 显示提示
+        function showAlert(type, message) {
+            const alert = document.getElementById('alert');
+            alert.className = `alert alert-${type} show`;
+            alert.textContent = message;
+            
+            setTimeout(() => {
+                alert.classList.remove('show');
+            }, 5000);
+        }
+        
+        // 定时更新状态
+        updateStatus();
+        setInterval(updateStatus, 5000);
+    </script>
+</body>
+</html>
