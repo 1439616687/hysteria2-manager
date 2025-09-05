@@ -4,11 +4,17 @@ Documentation=https://github.com/yourusername/hysteria2-manager
 After=network-online.target
 Wants=network-online.target systemd-networkd-wait-online.service
 
+# 依赖检查
+ConditionPathExists=/opt/hysteria2-manager/hysteria2_manager.py
+ConditionPathExists=/opt/hysteria2-manager/data/config.json
+
 [Service]
 # 服务类型
 Type=simple
+Restart=always
+RestartSec=10
 
-# 运行用户
+# 用户和权限
 User=root
 Group=root
 
@@ -18,48 +24,90 @@ WorkingDirectory=/opt/hysteria2-manager
 # 环境变量
 Environment="PATH=/opt/hysteria2-manager/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 Environment="PYTHONPATH=/opt/hysteria2-manager"
+Environment="PYTHONUNBUFFERED=1"
 Environment="LANG=en_US.UTF-8"
+Environment="LC_ALL=en_US.UTF-8"
 
 # 启动前检查
-ExecStartPre=/bin/bash -c 'if [ ! -f /opt/hysteria2-manager/data/config.json ]; then echo "配置文件不存在"; exit 1; fi'
-ExecStartPre=/bin/bash -c 'if [ ! -f /opt/hysteria2-manager/venv/bin/python ]; then echo "Python虚拟环境不存在"; exit 1; fi'
+ExecStartPre=/bin/bash -c 'test -f /opt/hysteria2-manager/data/config.json || exit 1'
+ExecStartPre=/bin/bash -c 'test -f /opt/hysteria2-manager/data/nodes.json || exit 1'
+ExecStartPre=/bin/bash -c 'test -f /opt/hysteria2-manager/data/users.json || exit 1'
+ExecStartPre=/bin/bash -c '/opt/hysteria2-manager/venv/bin/python --version || exit 1'
 
-# 启动命令
+# 主进程启动命令
 ExecStart=/opt/hysteria2-manager/venv/bin/python /opt/hysteria2-manager/hysteria2_manager.py
 
-# 重启策略
-Restart=always
-RestartSec=10
-StartLimitInterval=120
-StartLimitBurst=5
+# 停止命令
+ExecStop=/bin/kill -TERM $MAINPID
+ExecStopPost=/bin/rm -f /var/run/hysteria2-manager.pid
 
-# 停止超时
-TimeoutStopSec=10
+# 重载命令
+ExecReload=/bin/kill -HUP $MAINPID
 
 # 进程管理
 KillMode=mixed
 KillSignal=SIGTERM
+TimeoutStartSec=30
+TimeoutStopSec=10
+
+# 重启策略
+StartLimitInterval=120
+StartLimitBurst=5
 
 # 资源限制
 LimitNOFILE=65535
 LimitNPROC=4096
-LimitCORE=0
+LimitCORE=infinity
+TasksMax=4096
+
+# 内存管理
+MemoryMax=512M
+MemorySwapMax=0
+
+# CPU管理
+CPUWeight=100
+CPUQuota=50%
 
 # 安全设置
 NoNewPrivileges=false
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=true
-ReadWritePaths=/opt/hysteria2-manager/data /var/log/hysteria2
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictRealtime=true
+RestrictNamespaces=false
+LockPersonality=true
+RemoveIPC=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
 
-# 日志
+# 文件系统权限
+ReadWritePaths=/opt/hysteria2-manager/data
+ReadWritePaths=/var/log/hysteria2
+ReadWritePaths=/etc/hysteria2
+ReadOnlyPaths=/opt/hysteria2-manager/venv
+ReadOnlyPaths=/opt/hysteria2-manager/static
+
+# 设备访问
+PrivateDevices=true
+DevicePolicy=closed
+
+# 日志设置
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=hysteria2-manager
+LogLevelMax=info
 
-# 健康检查（可选）
-# ExecReload=/bin/kill -HUP $MAINPID
-# WatchdogSec=30s
+# 环境文件（可选）
+EnvironmentFile=-/etc/default/hysteria2-manager
+
+# 监控和健康检查
+WatchdogSec=60
+NotifyAccess=main
 
 [Install]
 WantedBy=multi-user.target
+Alias=hy2-manager.service
