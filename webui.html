@@ -11,26 +11,6 @@
     <!-- Axios -->
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
     
-    <!-- Chart.js - 使用稳定版本 3.9.1 -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
-    
-    <!-- 验证 Chart.js 加载 -->
-    <script>
-        window.addEventListener('DOMContentLoaded', function() {
-            if (typeof Chart === 'undefined') {
-                console.error('Chart.js 加载失败！尝试备用CDN...');
-                var script = document.createElement('script');
-                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js';
-                script.onload = function() {
-                    console.log('Chart.js 从备用CDN加载成功');
-                };
-                document.head.appendChild(script);
-            } else {
-                console.log('Chart.js 加载成功，版本:', Chart.version);
-            }
-        });
-    </script>
-    
     <style>
         /* ==================== 变量定义 ==================== */
         :root {
@@ -107,18 +87,6 @@
             color: var(--text-primary);
             line-height: 1.6;
             transition: var(--transition);
-        }
-        
-        /* ==================== Canvas 样式修复 ==================== */
-        #resourceChart {
-            max-width: 100%;
-            max-height: 100%;
-        }
-        
-        .chart-container {
-            position: relative;
-            height: 250px;
-            padding: 10px;
         }
         
         /* ==================== SVG图标定义 ==================== */
@@ -1216,7 +1184,7 @@
                     <p class="login-subtitle">Professional Proxy Management System</p>
                 </div>
                 
-                <form @submit.prevent="handleLogin">
+                <form @submit.prevent="handleLogin" autocomplete="off">
                     <div class="form-group">
                         <label class="form-label">用户名</label>
                         <input 
@@ -1226,6 +1194,8 @@
                             placeholder="请输入用户名"
                             required
                             autofocus
+                            autocomplete="off"
+                            name="username"
                         >
                     </div>
                     
@@ -1237,6 +1207,8 @@
                             v-model="loginForm.password"
                             placeholder="请输入密码"
                             required
+                            autocomplete="new-password"
+                            name="password"
                         >
                     </div>
                     
@@ -1428,55 +1400,40 @@
                         </div>
                         
                         <!-- 连接信息 -->
-                        <div class="grid grid-cols-2 gap-3">
-                            <div class="card">
-                                <div class="card-header">
-                                    <h3 class="card-title">连接信息</h3>
-                                </div>
-                                <table class="table">
-                                    <tr>
-                                        <td>出口IP</td>
-                                        <td>{{ connectionInfo.ip || 'N/A' }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>IP归属地</td>
-                                        <td>{{ connectionInfo.location || 'N/A' }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>连接延迟</td>
-                                        <td>{{ connectionInfo.latency > 0 ? connectionInfo.latency + ' ms' : 'N/A' }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>DNS状态</td>
-                                        <td>
-                                            <span class="badge" :class="connectionInfo.dns ? 'badge-success' : 'badge-danger'">
-                                                {{ connectionInfo.dns ? '正常' : '异常' }}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>HTTP状态</td>
-                                        <td>
-                                            <span class="badge" :class="connectionInfo.http ? 'badge-success' : 'badge-danger'">
-                                                {{ connectionInfo.http ? '正常' : '异常' }}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                </table>
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">连接信息</h3>
                             </div>
-                            
-                            <div class="card">
-                                <div class="card-header">
-                                    <h3 class="card-title">系统资源</h3>
-                                    <div class="flex gap-3 text-small">
-                                        <span>CPU: <strong style="color: #2196F3;">{{ systemStats?.cpu?.total?.toFixed(1) || '0' }}%</strong></span>
-                                        <span>内存: <strong style="color: #4CAF50;">{{ systemStats?.memory?.total?.toFixed(1) || '0' }}%</strong></span>
-                                    </div>
-                                </div>
-                                <div class="chart-container">
-                                    <canvas id="resourceChart"></canvas>
-                                </div>
-                            </div>
+                            <table class="table">
+                                <tr>
+                                    <td>出口IP</td>
+                                    <td>{{ connectionInfo.ip || 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <td>IP归属地</td>
+                                    <td>{{ connectionInfo.location || 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <td>连接延迟</td>
+                                    <td>{{ connectionInfo.latency > 0 ? connectionInfo.latency + ' ms' : 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <td>DNS状态</td>
+                                    <td>
+                                        <span class="badge" :class="connectionInfo.dns ? 'badge-success' : 'badge-danger'">
+                                            {{ connectionInfo.dns ? '正常' : '异常' }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>HTTP状态</td>
+                                    <td>
+                                        <span class="badge" :class="connectionInfo.http ? 'badge-success' : 'badge-danger'">
+                                            {{ connectionInfo.http ? '正常' : '异常' }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            </table>
                         </div>
                     </div>
                     
@@ -1916,10 +1873,10 @@
                     username: '',
                     token: '',
                     
-                    // 登录表单 - 安全修复：移除默认密码
+                    // 登录表单 - 已修复：不再有默认值
                     loginForm: {
-                        username: '',  // 原来是 'admin'
-                        password: ''   // 原来是 'admin'
+                        username: '',
+                        password: ''
                     },
                     loginError: '',
                     isLoading: false,
@@ -1996,7 +1953,7 @@
                     subscriptionUrl: '',
                     subscriptionName: '',
                     
-                    // 用户名修改表单 - 新增
+                    // 用户名修改表单
                     usernameForm: {
                         newUsername: '',
                         password: ''
@@ -2014,16 +1971,11 @@
                     nodeUrlToParse: '',
                     parsedNode: null,
                     
-                    // 图表实例
-                    resourceChart: null,
-                    systemStats: null,
-                    
                     // Toast通知
                     toasts: [],
                     
                     // 定时器
-                    refreshTimer: null,
-                    statsTimer: null
+                    refreshTimer: null
                 };
             },
             
@@ -2107,7 +2059,7 @@
                     window.location.reload();
                 },
                 
-                // 新增：修改用户名功能
+                // 修改用户名功能
                 async changeUsername() {
                     if (!this.usernameForm.newUsername) {
                         this.showToast('用户名不能为空', 'error');
@@ -2180,28 +2132,6 @@
                     if (page === 'logs') {
                         this.fetchLogs();
                     }
-                    
-                    // 切换到仪表板时初始化图表
-                    if (page === 'dashboard') {
-                        console.log('[Nav] 切换到仪表板');
-                        
-                        // 先获取最新数据
-                        this.fetchSystemStats();
-                        
-                        // 确保DOM更新后再初始化图表
-                        this.$nextTick(() => {
-                            // 延迟执行以确保DOM完全渲染
-                            setTimeout(() => {
-                                if (!this.resourceChart) {
-                                    console.log('[Nav] 需要初始化图表');
-                                    this.initResourceChart();
-                                } else {
-                                    console.log('[Nav] 图表已存在，更新数据');
-                                    this.updateResourceChart();
-                                }
-                            }, 100);
-                        });
-                    }
                 },
                 
                 toggleSidebar() {
@@ -2270,27 +2200,9 @@
                     }
                 },
                 
-                async fetchSystemStats() {
-                    try {
-                        const response = await axios.get(`${API_BASE}/system/stats`);
-                        if (response.data.success) {
-                            this.systemStats = response.data.data;
-                            console.log('[Stats] 系统统计数据:', this.systemStats);
-                            
-                            // 只有在仪表板页面才更新图表
-                            if (this.currentPage === 'dashboard') {
-                                this.updateResourceChart();
-                            }
-                        }
-                    } catch (error) {
-                        console.error('获取系统统计失败:', error);
-                    }
-                },
-                
                 refreshData() {
                     this.fetchStatus();
                     this.fetchNodes();
-                    this.fetchSystemStats();
                     if (this.currentPage === 'logs') {
                         this.fetchLogs();
                     }
@@ -2662,251 +2574,17 @@
                     return icons[type] || icons.info;
                 },
                 
-                // ==================== 图表相关 - 完全修复版本 ====================
-                initResourceChart() {
-                    console.log('[Chart] 开始初始化图表...');
-                    
-                    // 延迟执行以确保DOM已经渲染
-                    setTimeout(() => {
-                        // 检查 Chart.js 是否加载
-                        if (typeof Chart === 'undefined') {
-                            console.error('[Chart] Chart.js 未加载！');
-                            // 尝试动态加载
-                            if (!window.chartLoadAttempted) {
-                                window.chartLoadAttempted = true;
-                                const script = document.createElement('script');
-                                script.src = 'https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js';
-                                script.onload = () => {
-                                    console.log('[Chart] Chart.js 动态加载成功');
-                                    this.initResourceChart();
-                                };
-                                document.head.appendChild(script);
-                            }
-                            return;
-                        }
-                        
-                        // 获取canvas元素
-                        const canvas = document.getElementById('resourceChart');
-                        if (!canvas) {
-                            console.error('[Chart] Canvas元素未找到！');
-                            // 重试
-                            setTimeout(() => this.initResourceChart(), 500);
-                            return;
-                        }
-                        
-                        // 清理旧图表
-                        if (this.resourceChart) {
-                            try {
-                                this.resourceChart.destroy();
-                                this.resourceChart = null;
-                                console.log('[Chart] 旧图表已销毁');
-                            } catch (e) {
-                                console.error('[Chart] 销毁旧图表失败:', e);
-                            }
-                        }
-                        
-                        // 创建新图表
-                        try {
-                            const ctx = canvas.getContext('2d');
-                            
-                            // 创建图表配置 - 简化版本确保兼容性
-                            const config = {
-                                type: 'line',
-                                data: {
-                                    labels: [],
-                                    datasets: [
-                                        {
-                                            label: 'CPU使用率',
-                                            data: [],
-                                            borderColor: 'rgb(33, 150, 243)',
-                                            backgroundColor: 'rgba(33, 150, 243, 0.1)',
-                                            borderWidth: 2,
-                                            fill: true,
-                                            tension: 0.3,
-                                            pointRadius: 2,
-                                            pointHoverRadius: 4
-                                        },
-                                        {
-                                            label: '内存使用率',
-                                            data: [],
-                                            borderColor: 'rgb(76, 175, 80)',
-                                            backgroundColor: 'rgba(76, 175, 80, 0.1)',
-                                            borderWidth: 2,
-                                            fill: true,
-                                            tension: 0.3,
-                                            pointRadius: 2,
-                                            pointHoverRadius: 4
-                                        }
-                                    ]
-                                },
-                                options: {
-                                    responsive: true,
-                                    maintainAspectRatio: false,
-                                    interaction: {
-                                        mode: 'index',
-                                        intersect: false
-                                    },
-                                    plugins: {
-                                        legend: {
-                                            display: true,
-                                            position: 'top',
-                                            labels: {
-                                                padding: 10,
-                                                font: { size: 12 },
-                                                usePointStyle: true,
-                                                boxWidth: 10
-                                            }
-                                        },
-                                        tooltip: {
-                                            mode: 'index',
-                                            intersect: false,
-                                            callbacks: {
-                                                label: function(context) {
-                                                    return context.dataset.label + ': ' + 
-                                                           (context.parsed.y || 0).toFixed(1) + '%';
-                                                }
-                                            }
-                                        }
-                                    },
-                                    scales: {
-                                        x: {
-                                            display: true,
-                                            grid: { display: false },
-                                            ticks: {
-                                                maxRotation: 0,
-                                                autoSkip: true,
-                                                maxTicksLimit: 10
-                                            }
-                                        },
-                                        y: {
-                                            display: true,
-                                            min: 0,
-                                            max: 100,
-                                            grid: {
-                                                color: 'rgba(0, 0, 0, 0.05)'
-                                            },
-                                            ticks: {
-                                                stepSize: 25,
-                                                callback: function(value) {
-                                                    return value + '%';
-                                                }
-                                            }
-                                        }
-                                    },
-                                    animation: {
-                                        duration: 200
-                                    }
-                                }
-                            };
-                            
-                            // 创建图表实例
-                            this.resourceChart = new Chart(ctx, config);
-                            
-                            console.log('[Chart] ✅ 图表创建成功！');
-                            
-                            // 添加初始数据点（避免空白）
-                            const now = Date.now();
-                            for (let i = 5; i > 0; i--) {
-                                const time = new Date(now - i * 3000);
-                                this.resourceChart.data.labels.push(
-                                    time.toLocaleTimeString('zh-CN', {
-                                        hour: '2-digit',
-                                        minute: '2-digit',
-                                        second: '2-digit'
-                                    })
-                                );
-                                this.resourceChart.data.datasets[0].data.push(0);
-                                this.resourceChart.data.datasets[1].data.push(0);
-                            }
-                            this.resourceChart.update('none');
-                            
-                            // 立即获取数据
-                            this.fetchSystemStats();
-                            
-                        } catch (error) {
-                            console.error('[Chart] ❌ 创建图表失败:', error);
-                            this.resourceChart = null;
-                        }
-                    }, 300); // 延迟300ms确保DOM渲染
-                },
-                
-                updateResourceChart() {
-                    // 检查图表是否存在
-                    if (!this.resourceChart) {
-                        console.log('[Chart] 图表不存在，尝试初始化...');
-                        this.initResourceChart();
-                        return;
-                    }
-                    
-                    // 检查数据
-                    if (!this.systemStats) {
-                        console.log('[Chart] 无系统数据');
-                        return;
-                    }
-                    
-                    try {
-                        // 获取当前时间
-                        const now = new Date().toLocaleTimeString('zh-CN', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            second: '2-digit'
-                        });
-                        
-                        // 获取数据值（确保是数字）
-                        const cpuUsage = parseFloat(this.systemStats?.cpu?.total) || 0;
-                        const memoryUsage = parseFloat(this.systemStats?.memory?.total) || 0;
-                        
-                        console.log(`[Chart] 更新数据 - CPU: ${cpuUsage}%, 内存: ${memoryUsage}%`);
-                        
-                        // 检查图表数据结构
-                        if (!this.resourceChart.data) {
-                            console.error('[Chart] 图表数据结构损坏');
-                            this.initResourceChart();
-                            return;
-                        }
-                        
-                        // 添加新数据点
-                        this.resourceChart.data.labels.push(now);
-                        this.resourceChart.data.datasets[0].data.push(cpuUsage);
-                        this.resourceChart.data.datasets[1].data.push(memoryUsage);
-                        
-                        // 限制数据点数量（最多保留20个）
-                        const maxPoints = 20;
-                        while (this.resourceChart.data.labels.length > maxPoints) {
-                            this.resourceChart.data.labels.shift();
-                            this.resourceChart.data.datasets[0].data.shift();
-                            this.resourceChart.data.datasets[1].data.shift();
-                        }
-                        
-                        // 更新图表显示
-                        this.resourceChart.update('none');
-                        
-                        console.log('[Chart] ✅ 数据更新成功');
-                        
-                    } catch (error) {
-                        console.error('[Chart] ❌ 更新失败:', error);
-                        // 尝试重新初始化
-                        this.resourceChart = null;
-                        this.initResourceChart();
-                    }
-                },
-                
                 // ==================== 初始化 ====================
                 initializeApp() {
                     // 加载初始数据
                     this.fetchStatus();
                     this.fetchNodes();
                     this.fetchConfig();
-                    this.fetchSystemStats();
                     
-                    // 设置定时刷新
+                    // 设置定时刷新（移除了系统统计相关的定时器）
                     this.refreshTimer = setInterval(() => {
                         this.fetchStatus();
                     }, 5000);
-                    
-                    this.statsTimer = setInterval(() => {
-                        this.fetchSystemStats();
-                    }, 3000);
                 }
             },
             
@@ -2920,26 +2598,6 @@
                     this.username = username;
                     this.isAuthenticated = true;
                     this.initializeApp();
-                    
-                    // 初始页面是仪表板时的处理
-                    if (this.currentPage === 'dashboard') {
-                        console.log('[Mount] 初始页面是仪表板');
-                        
-                        // 等待页面加载完成
-                        if (document.readyState === 'complete') {
-                            // 页面已加载，直接初始化
-                            setTimeout(() => {
-                                this.initResourceChart();
-                            }, 500);
-                        } else {
-                            // 等待页面加载完成
-                            window.addEventListener('load', () => {
-                                setTimeout(() => {
-                                    this.initResourceChart();
-                                }, 500);
-                            });
-                        }
-                    }
                 }
                 
                 // 初始化主题
@@ -2961,16 +2619,6 @@
                 // 清理定时器
                 if (this.refreshTimer) {
                     clearInterval(this.refreshTimer);
-                }
-                if (this.statsTimer) {
-                    clearInterval(this.statsTimer);
-                }
-                
-                // 清理图表
-                if (this.resourceChart) {
-                    console.log('[Unmount] 清理图表实例');
-                    this.resourceChart.destroy();
-                    this.resourceChart = null;
                 }
             }
         }).mount('#app');
