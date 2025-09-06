@@ -32,7 +32,6 @@ from flask import Flask, request, jsonify, send_file, Response, g
 from flask_cors import CORS
 import jwt
 import bcrypt
-import psutil
 import requests
 
 # ==================== 配置常量 ====================
@@ -185,6 +184,31 @@ def get_server_ip(domain: str) -> str:
         except socket.gaierror:
             logger.warning(f"域名解析失败: {domain}")
             return domain
+
+def get_network_traffic() -> Dict[str, int]:
+    """获取网络流量统计（简化版本）"""
+    try:
+        # 读取网络接口统计
+        with open('/proc/net/dev', 'r') as f:
+            lines = f.readlines()
+        
+        total_bytes_sent = 0
+        total_bytes_recv = 0
+        
+        for line in lines[2:]:  # 跳过头部
+            if ':' in line:
+                parts = line.split(':')[1].split()
+                if len(parts) >= 9:
+                    total_bytes_recv += int(parts[0])
+                    total_bytes_sent += int(parts[8])
+        
+        return {
+            "bytes_sent": total_bytes_sent,
+            "bytes_recv": total_bytes_recv
+        }
+    except Exception as e:
+        logger.error(f"获取网络流量失败: {e}")
+        return {"bytes_sent": 0, "bytes_recv": 0}
 
 # ==================== 认证系统 ====================
 class AuthManager:
@@ -704,72 +728,6 @@ class Hysteria2Manager:
             logger.error(f"连接测试失败: {e}")
         
         return result
-    
-    def get_system_stats(self) -> Dict[str, Any]:
-        """获取系统统计信息 - 修复版本"""
-        try:
-            # CPU使用率 - 使用interval参数获取准确值
-            cpu_percent = psutil.cpu_percent(interval=1)
-            
-            # 内存信息
-            mem = psutil.virtual_memory()
-            
-            # 磁盘信息
-            disk = psutil.disk_usage('/')
-            
-            # 网络流量
-            net_io = psutil.net_io_counters()
-            
-            # Hysteria进程信息
-            hysteria_info = {"cpu": 0, "memory": 0, "pid": None}
-            for proc in psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_info']):
-                try:
-                    if 'hysteria' in proc.info['name'].lower():
-                        hysteria_info["pid"] = proc.info['pid']
-                        hysteria_info["cpu"] = proc.cpu_percent(interval=0.1)
-                        hysteria_info["memory"] = proc.memory_info().rss / 1024 / 1024  # MB
-                        break
-                except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
-                    pass
-            
-            # 返回格式化的数据，确保前端能正确访问
-            return {
-                "cpu": {
-                    "total": round(cpu_percent, 1),  # 确保是浮点数
-                    "hysteria": round(hysteria_info["cpu"], 1)
-                },
-                "memory": {
-                    "total": round(mem.percent, 1),  # 确保是浮点数
-                    "used": mem.used // (1024 * 1024),  # MB
-                    "available": mem.available // (1024 * 1024),  # MB
-                    "hysteria": round(hysteria_info["memory"], 1)
-                },
-                "disk": {
-                    "total": disk.total // (1024 * 1024 * 1024),  # GB
-                    "used": disk.used // (1024 * 1024 * 1024),  # GB
-                    "percent": round(disk.percent, 1)
-                },
-                "network": {
-                    "bytes_sent": net_io.bytes_sent,
-                    "bytes_recv": net_io.bytes_recv,
-                    "packets_sent": net_io.packets_sent,
-                    "packets_recv": net_io.packets_recv
-                },
-                "uptime": int(time.time() - psutil.boot_time()),
-                "hysteria_running": hysteria_info["pid"] is not None
-            }
-            
-        except Exception as e:
-            logger.error(f"获取系统统计失败: {e}")
-            # 返回默认值，确保前端不会崩溃
-            return {
-                "cpu": {"total": 0, "hysteria": 0},
-                "memory": {"total": 0, "used": 0, "available": 0, "hysteria": 0},
-                "disk": {"total": 0, "used": 0, "percent": 0},
-                "network": {"bytes_sent": 0, "bytes_recv": 0, "packets_sent": 0, "packets_recv": 0},
-                "uptime": 0,
-                "hysteria_running": False
-            }
 
 # ==================== Flask应用 ====================
 app = Flask(__name__)
@@ -871,7 +829,7 @@ def api_change_password():
 @app.route('/api/change_username', methods=['POST'])
 @require_auth
 def api_change_username():
-    """修改用户名 - 新增功能"""
+    """修改用户名"""
     data = request.get_json()
     password = data.get('password')
     new_username = data.get('new_username')
@@ -904,21 +862,17 @@ def api_status():
         service_status = hysteria_manager.get_service_status()
         connection_status = hysteria_manager.test_connection()
         
-        # 获取流量统计
+        # 获取流量统计（简化版本）
+        net_stats = get_network_traffic()
         stats = {
-            "traffic": {"up": 0, "down": 0, "total": 0},
+            "traffic": {
+                "up": net_stats["bytes_sent"],
+                "down": net_stats["bytes_recv"],
+                "total": net_stats["bytes_sent"] + net_stats["bytes_recv"]
+            },
             "connections": 0,
             "uptime": 0
         }
-        
-        # 尝试从系统获取流量信息
-        try:
-            net_io = psutil.net_io_counters()
-            stats["traffic"]["up"] = net_io.bytes_sent
-            stats["traffic"]["down"] = net_io.bytes_recv
-            stats["traffic"]["total"] = net_io.bytes_sent + net_io.bytes_recv
-        except:
-            pass
         
         return jsonify({
             "success": True,
@@ -1065,13 +1019,6 @@ def api_get_logs():
     except Exception as e:
         logger.error(f"获取日志失败: {e}")
         return jsonify({"success": False, "message": str(e), "data": {"hysteria": [], "manager": []}}), 500
-
-@app.route('/api/system/stats')
-@require_auth
-def api_system_stats():
-    """获取系统统计"""
-    stats = hysteria_manager.get_system_stats()
-    return jsonify({"success": True, "data": stats})
 
 @app.route('/api/system/optimize', methods=['POST'])
 @require_auth
