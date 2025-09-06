@@ -16,10 +16,6 @@ PyJWT==2.8.0
 # bcrypt - Modern password hashing library
 bcrypt==4.1.2
 
-# ==================== System Monitoring ====================
-# psutil - Cross-platform system monitoring
-psutil==5.9.8
-
 # ==================== Configuration ====================
 # PyYAML - YAML parser and emitter
 PyYAML==6.0.1
